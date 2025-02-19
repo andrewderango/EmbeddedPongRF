@@ -1,0 +1,1 @@
+For our embedded systems course, Andrew DeRango and I created a pong game which is displayed on the microcontrollers screen and controlled by three connected buttons. This project is still a work in progress.
