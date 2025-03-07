@@ -13,6 +13,7 @@
 LCD_DISCO_F429ZI LCD;
 I2C i2c(SDA_PIN, SCL_PIN);
 DigitalOut led(PG_14);
+Ticker game_ticker;
 
 // INTERRUPTS -----------------------------
 
@@ -37,25 +38,38 @@ static State_Type curr_state;
 // BOARD OBJECT METHODS
         
 // Constructor
-Board::Board(int height, int width) : height(height), width(width) {
-    balls.emplace_back(height/2, width/2);
+Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
+    balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    score1 = 0;
+    score2 = 0;
 }
 
 // Destructor
 Board::~Board() {}
 
-int Board::getHeight() const {return height;}
-int Board::getWidth() const {return width;}
+int Board::getMinHeight() const {return min_height;}
+int Board::getMinWidth() const {return min_width;}
+int Board::getMaxHeight() const {return max_height;}
+int Board::getMaxWidth() const {return max_width;}
 void Board::drawBalls() {
     for (int i = 0; i < balls.size(); i++) {
         balls[i].draw();
     }
 }
+void Board::moveBalls() {
+    for (int i = 0; i < balls.size(); i++) {
+        balls[i].move(*this);
+    }
+}
+void Board::incrementScore1() {score1++;}
+void Board::incrementScore2() {score2++;}
 
 // BALL OBJECT METHODS
 
 Ball::Ball(int x, int y) : x(x), y(y) {
     radius = 3;
+    x_speed = 1;
+    y_speed = 0;
 }
 Ball::~Ball() {}
 
@@ -64,15 +78,29 @@ void Ball::draw() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillCircle(x, y, radius);
 }
-void Ball::move() {
-    // Code to move the ball
+void Ball::move(Board& board) {
+    x = x + x_speed;
+    y = y + y_speed;
+    if (y-radius <= board.getMinHeight()) {
+        board.incrementScore1();
+    } else if (y+radius >= board.getMaxHeight()) {
+        board.incrementScore2();
+    } else if (x-radius <= board.getMinWidth()) {
+        x_speed = abs(x_speed);
+        x = abs(x-board.getMinWidth()) + board.getMinWidth();
+        x = max(board.getMinWidth()+radius, x);
+    } else if (x+radius >= board.getMaxWidth()) {
+        x_speed = -abs(x_speed);
+        x = board.getMaxWidth() - abs(x-board.getMaxWidth());
+        x = min(board.getMaxWidth()-radius, x);
+    }
 }
 
 // PADDLE OBJECT METHODS
 
 Paddle::Paddle(int x, int y, Board& board) : x(x), y(y), board(board) {
             height = 5;
-            width = 0.15 * board.getWidth();
+            width = 0.15 * (board.getMaxWidth()-board.getMinWidth());
         }
 Paddle::~Paddle() {}
 
@@ -82,21 +110,21 @@ void Paddle::draw() {
     LCD.FillRect(x, y, width, height);
 }
 void Paddle::moveRight() {
-    if (x+width <= board.getWidth()) {
+    if (x+width <= board.getMaxWidth()) {
         x = x + 0.25*width;
-        x = min(x, board.getWidth()-width);
+        x = min(x, board.getMaxWidth()-width);
     }
 }
 void Paddle::moveLeft() {
-    if (x > 0) {
+    if (x > board.getMinWidth()) {
         x = x - 0.25*width;
-        x = max(0, x);
+        x = max(board.getMinWidth(), x);
     }
 }
 
-Board board(240, 320);
-Paddle paddle1(board.getHeight()/2 - (0.15 * board.getWidth())/2, 0, board);
-Paddle paddle2(board.getHeight()/2 - (0.15 * board.getWidth())/2, board.getWidth()-5, board);
+Board board(0, 0, 240, 320);
+Paddle paddle1((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMinHeight() + 5, board);
+Paddle paddle2((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMaxHeight() - 10, board);
 
 // ISRs -----------------------------------
 
@@ -122,6 +150,10 @@ void OnboardButtonISR() {
     } else if (curr_state == STATE_PAUSE) {
         curr_state = STATE_MENU;
     } 
+}
+
+void TickerISR() {
+    board.moveBalls();
 }
 
 // FSM SET UP ------------------------------
@@ -152,7 +184,6 @@ void statePause() {
 
 void stateGame() {
     LCD.Clear(LCD_COLOR_BLACK);
-    //board.draw();
     board.drawBalls();
     paddle1.draw();
     paddle2.draw();
@@ -161,6 +192,7 @@ void stateGame() {
 // MAIN FUNCTION -----------------------------
 
 int main() {
+    game_ticker.attach(&TickerISR, 20ms);
     onboard_button.fall(&OnboardButtonISR);
     external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
@@ -168,6 +200,6 @@ int main() {
     initializeSM();
     while (1) {
         state_table[curr_state]();
-        thread_sleep_for(100);
+        thread_sleep_for(20);
     }
 }

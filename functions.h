@@ -12,15 +12,24 @@ class Paddle;
 // Board Class
 class Board {
 private:
-    int height;
-    int width;
+    int min_height;
+    int max_height;
+    int min_width;
+    int max_width;
     std::vector<Ball> balls;
+    int score1;
+    int score2;
 public:
-    Board(int height, int width);
+    Board(int min_width, int min_height, int max_width, int max_height);
     ~Board();
-    int getHeight() const;
-    int getWidth() const;
+    int getMinHeight() const;
+    int getMinWidth() const;
+    int getMaxHeight() const;
+    int getMaxWidth() const;
     void drawBalls();
+    void moveBalls();
+    void incrementScore1();
+    void incrementScore2();
 };
 
 // Ball Class
@@ -29,11 +38,13 @@ private:
     int x;
     int y;
     int radius;
+    float x_speed;
+    float y_speed;
 public:
     Ball(int x, int y);
     ~Ball();
     void draw();
-    void move();
+    void move(Board& board);
 };
 
 // Paddle Class
