@@ -131,7 +131,7 @@ void Paddle::moveLeft() {
     }
 }
 
-Board board(0, 0, 240, 300);
+Board board(0, 20, 240, 320);
 Paddle paddle1((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMinHeight() + 5, board);
 Paddle paddle2((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMaxHeight() - 10, board);
 
