@@ -77,7 +77,7 @@ int Board::getScore2() const {return score2;}
 Ball::Ball(int x, int y) : x(x), y(y) {
     radius = 3;
     x_speed = 1;
-    y_speed = -1;
+    y_speed = 1;
 }
 Ball::~Ball() {}
 
@@ -200,12 +200,10 @@ void stateGame() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillRect(board.getMaxWidth()-board.getMinWidth(), 0, board.getMaxWidth()-board.getMinWidth(), board.getMinHeight());
     LCD.SetTextColor(LCD_COLOR_BLACK);
-    char score1_str[10];
-    char score2_str[10];
-    sprintf(score1_str, "%d", board.getScore1());
-    sprintf(score2_str, "%d", board.getScore2());
-    LCD.DisplayStringAt(board.getMaxWidth()-board.getMinWidth()+10, 10, (uint8_t *)score1_str, LEFT_MODE);
-    LCD.DisplayStringAt(board.getMaxWidth()-board.getMinWidth()+10, 20, (uint8_t *)score2_str, LEFT_MODE);
+    LCD.SetFont(&Font12);
+    char score_str[20];
+    sprintf(score_str, "SCORE: %d - %d", board.getScore1(), board.getScore2());
+    LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
     // Draw the board and paddles
     board.drawBalls();
