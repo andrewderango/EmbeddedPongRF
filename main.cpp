@@ -1,7 +1,9 @@
+#include "functions.h"
 #include "LCD_DISCO_F429ZI.h"
 #include "DebouncedInterrupt.h"
 #include "mbed.h"
 #include <time.h>
+#include <vector>
 
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
@@ -32,62 +34,63 @@ typedef enum {
 static State_Type curr_state;
 
 // OBJECTS --------------------------------
+// BOARD OBJECT METHODS
+        
+// Constructor
+Board::Board(int height, int width) : height(height), width(width) {
+    balls.emplace_back(50, 50);
+}
 
-class Board {
-    private:
-        int height;
-        int width;
-    
-    public:
-        // Constructor
-        Board(int height, int width) : height(height), width(width) {}
+// Destructor
+Board::~Board() {}
 
-        // Destructor
-        ~Board() {}
+int Board::getHeight() const {return height;}
+int Board::getWidth() const {return width;}
+void Board::drawBalls() {
+    for (int i = 0; i < balls.size(); i++) {
+        balls[i].draw();
+    }
+}
 
-        int getHeight() const {return height;}
-        int getWidth() const {return width;}
-};
+// BALL OBJECT METHODS
 
-class Ball {
-    private:
-        int x;
-        int y;
-    public:
-        Ball(int x, int y) : x(x), y(y) {}
-        ~Ball() {}
+Ball::Ball(int x, int y) : x(x), y(y) {
+    radius = 3;
+}
+Ball::~Ball() {}
 
-        void draw() {
-            // Code to draw the ball at position (x, y)
+void Ball::draw() {
+    // Code to draw the ball at position (x, y)
+    LCD.SetTextColor(LCD_COLOR_WHITE);
+    LCD.FillCircle(x, y, radius);
+}
+void Ball::move() {
+    // Code to move the ball
+}
+
+// PADDLE OBJECT METHODS
+
+Paddle::Paddle(int x, int y, Board& board) : x(x), y(y), board(board) {
+            height = 5;
+            width = 0.15 * board.getWidth();
         }
-        void move() {
-            // Code to move the ball
-        }
-};
+Paddle::~Paddle() {}
 
-class Paddle {
-    private:
-        int x;
-        int y;
-    public:
-        Paddle(int x, int y) : x(x), y(y) {}
-        ~Paddle() {}
-
-        void draw() {
-            // Code to draw the paddle at position (x, y)
-        }
-        void moveUp() {
-            // Code to move the paddle up
-        }
-        void moveDown() {
-            // Code to move the paddle down
-        }
-};
+void Paddle::draw() {
+    // Code to draw the paddle at position (x, y)
+    LCD.SetTextColor(LCD_COLOR_WHITE);
+    LCD.FillRect(x, y, width, height);
+}
+void Paddle::moveUp() {
+    // Code to move the paddle up
+    }
+void Paddle::moveDown() {
+    // Code to move the paddle down
+}
 
 Board board(240, 320);
-Ball ball(50, 50);
-Paddle paddle1(10, 30);
-Paddle paddle2(10, 70);
+Paddle paddle1(30, 30, board);
+Paddle paddle2(30, 200, board);
 
 // ISRs -----------------------------------
 
@@ -117,7 +120,7 @@ void OnboardButtonISR() {
 
 void stateMenu(void);
 void statePause(void);
-void stateGame(void);
+void stateGame();
 
 static void (*state_table[])(void) = {stateMenu, statePause, stateGame};
 
@@ -141,8 +144,8 @@ void statePause() {
 
 void stateGame() {
     LCD.Clear(LCD_COLOR_BLACK);
-    board.draw();
-    ball.draw();
+    //board.draw();
+    board.drawBalls();
     paddle1.draw();
     paddle2.draw();
 }
