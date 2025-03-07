@@ -58,8 +58,14 @@ void Board::drawBalls() {
 }
 void Board::moveBalls() {
     for (int i = 0; i < balls.size(); i++) {
-        balls[i].move(*this);
+        bool del = false;
+        balls[i].move(*this, del);
+        if (del) {
+            balls.erase(balls.begin() + i);
+            i--;
+        }
     }
+    if (balls.size() <= 0) {balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);}
 }
 void Board::incrementScore1() {score1++;}
 void Board::incrementScore2() {score2++;}
@@ -69,7 +75,7 @@ void Board::incrementScore2() {score2++;}
 Ball::Ball(int x, int y) : x(x), y(y) {
     radius = 3;
     x_speed = 1;
-    y_speed = 0;
+    y_speed = -1;
 }
 Ball::~Ball() {}
 
@@ -78,13 +84,16 @@ void Ball::draw() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillCircle(x, y, radius);
 }
-void Ball::move(Board& board) {
+void Ball::move(Board& board, bool& del) {
     x = x + x_speed;
     y = y + y_speed;
+    del = false;
     if (y-radius <= board.getMinHeight()) {
         board.incrementScore1();
+        del = true;
     } else if (y+radius >= board.getMaxHeight()) {
         board.incrementScore2();
+        del = true;
     } else if (x-radius <= board.getMinWidth()) {
         x_speed = abs(x_speed);
         x = abs(x-board.getMinWidth()) + board.getMinWidth();
@@ -122,7 +131,7 @@ void Paddle::moveLeft() {
     }
 }
 
-Board board(0, 0, 240, 320);
+Board board(0, 0, 240, 300);
 Paddle paddle1((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMinHeight() + 5, board);
 Paddle paddle2((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMaxHeight() - 10, board);
 

@@ -44,7 +44,7 @@ public:
     Ball(int x, int y);
     ~Ball();
     void draw();
-    void move(Board& board);
+    void move(Board& board, bool& del);
 };
 
 // Paddle Class
