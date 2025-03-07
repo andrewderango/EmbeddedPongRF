@@ -33,6 +33,22 @@ static State_Type curr_state;
 
 // OBJECTS --------------------------------
 
+class Board {
+    private:
+        int height;
+        int width;
+    
+    public:
+        // Constructor
+        Board(int height, int width) : height(height), width(width) {}
+
+        // Destructor
+        ~Board() {}
+
+        int getHeight() const {return height;}
+        int getWidth() const {return width;}
+};
+
 class Ball {
     private:
         int x;
