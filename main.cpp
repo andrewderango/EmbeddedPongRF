@@ -22,16 +22,18 @@ DebouncedInterrupt external_button3(PA_7);
 // DATA TYPES -----------------------------
 
 typedef enum {
-  STATE_IDLE = 0,
-  STATE_RECORD_TIME,
-  STATE_DISPLAY_TIME,
-  STATE_CHANGE_TIME
+  STATE_MENU = 0,
+  STATE_PAUSE = 1,
+  STATE_GAME = 2,
 } State_Type;
 
 // GLOBAL VARS ----------------------------
 
 static State_Type curr_state;
-static State_Type prev_state;
+
+// OBJECTS --------------------------------
+
+
 
 // ISRs -----------------------------------
 
@@ -39,22 +41,34 @@ void ExternalButton1ISR() {
 
 }
 
-void OnboardButtonISR() {
+void ExternalButton2ISR() {
 
+}
+
+void ExternalButton3ISR() {
+
+}
+
+void OnboardButtonISR() {
+    if (curr_state == STATE_MENU) {
+        curr_state = STATE_GAME;
+    } else if (curr_state == STATE_GAME) {
+        curr_state = STATE_PAUSE;
+    } else {
+        curr_state = STATE_GAME;
+    }
 }
 
 // FSM SET UP ------------------------------
 
-void stateIdle(void);
-void stateRecordTime(void);
-void stateDisplayTime(void);
-void stateChangeTime(void);
+void stateMenu(void);
+void statePause(void);
+void stateGame(void);
 
-static void (*state_table[])(void) = {stateIdle, stateRecordTime, stateDisplayTime, stateChangeTime};
+static void (*state_table[])(void) = {stateMenu, statePause, stateGame};
 
 void initializeSM() {
-  curr_state = STATE_IDLE;
-  prev_state = STATE_DISPLAY_TIME;
+  curr_state = STATE_MENU;
 }
 
 // HELPER FUNCTIONS ------------------------
@@ -63,14 +77,25 @@ void initializeSM() {
 
 // STATE FUNCTIONS ---------------------------
 
+void stateMenu() {
+    LCD.Clear(LCD_COLOR_BLUE);
+}
 
+void statePause() {
+    LCD.Clear(LCD_COLOR_RED);
+}
+
+void stateGame() {
+    LCD.Clear(LCD_COLOR_BLACK);
+}
 
 // MAIN FUNCTION -----------------------------
 
 int main() {
-
-  while (1) {
-    state_table[curr_state]();
-    thread_sleep_for(100);
-  }
+    onboard_button.fall(&OnboardButtonISR);
+    initializeSM();
+    while (1) {
+        state_table[curr_state]();
+        thread_sleep_for(100);
+    }
 }
