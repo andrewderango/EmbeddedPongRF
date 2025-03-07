@@ -38,7 +38,7 @@ static State_Type curr_state;
         
 // Constructor
 Board::Board(int height, int width) : height(height), width(width) {
-    balls.emplace_back(50, 50);
+    balls.emplace_back(height/2, width/2);
 }
 
 // Destructor
@@ -89,8 +89,8 @@ void Paddle::moveDown() {
 }
 
 Board board(240, 320);
-Paddle paddle1(30, 30, board);
-Paddle paddle2(30, 200, board);
+Paddle paddle1(board.getHeight()/2 - (0.15 * board.getWidth())/2, 0, board);
+Paddle paddle2(board.getHeight()/2 - (0.15 * board.getWidth())/2, board.getWidth()-5, board);
 
 // ISRs -----------------------------------
 
