@@ -201,8 +201,16 @@ void stateGame() {
     LCD.FillRect(board.getMaxWidth()-board.getMinWidth(), 0, board.getMaxWidth()-board.getMinWidth(), board.getMinHeight());
     LCD.SetTextColor(LCD_COLOR_BLACK);
     LCD.SetFont(&Font12);
-    char score_str[20];
-    sprintf(score_str, "SCORE: %d - %d", board.getScore1(), board.getScore2());
+    char score_str[30];
+    int score1 = board.getScore1();
+    int score2 = board.getScore2();
+    if (score1 > score2) {
+        sprintf(score_str, "SCORE: %d - %d (P1)", score1, score2);
+    } else if (score2 > score1) {
+        sprintf(score_str, "SCORE: %d - %d (P2)", score1, score2);
+    } else {
+        sprintf(score_str, "SCORE: %d - %d", score1, score2);
+    }
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
     // Draw the board and paddles
