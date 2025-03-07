@@ -49,6 +49,46 @@ class Board {
         int getWidth() const {return width;}
 };
 
+class Ball {
+    private:
+        int x;
+        int y;
+    public:
+        Ball(int x, int y) : x(x), y(y) {}
+        ~Ball() {}
+
+        void draw() {
+            // Code to draw the ball at position (x, y)
+        }
+        void move() {
+            // Code to move the ball
+        }
+};
+
+class Paddle {
+    private:
+        int x;
+        int y;
+    public:
+        Paddle(int x, int y) : x(x), y(y) {}
+        ~Paddle() {}
+
+        void draw() {
+            // Code to draw the paddle at position (x, y)
+        }
+        void moveUp() {
+            // Code to move the paddle up
+        }
+        void moveDown() {
+            // Code to move the paddle down
+        }
+};
+
+Board board(240, 320);
+Ball ball(50, 50);
+Paddle paddle1(10, 30);
+Paddle paddle2(10, 70);
+
 // ISRs -----------------------------------
 
 void ExternalButton1ISR() {
@@ -101,6 +141,10 @@ void statePause() {
 
 void stateGame() {
     LCD.Clear(LCD_COLOR_BLACK);
+    board.draw();
+    ball.draw();
+    paddle1.draw();
+    paddle2.draw();
 }
 
 // MAIN FUNCTION -----------------------------
