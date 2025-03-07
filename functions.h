@@ -30,6 +30,8 @@ public:
     void moveBalls();
     void incrementScore1();
     void incrementScore2();
+    int getScore1() const;
+    int getScore2() const;
 };
 
 // Ball Class

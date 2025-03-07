@@ -69,6 +69,8 @@ void Board::moveBalls() {
 }
 void Board::incrementScore1() {score1++;}
 void Board::incrementScore2() {score2++;}
+int Board::getScore1() const {return score1;}
+int Board::getScore2() const {return score2;}
 
 // BALL OBJECT METHODS
 
@@ -89,10 +91,10 @@ void Ball::move(Board& board, bool& del) {
     y = y + y_speed;
     del = false;
     if (y-radius <= board.getMinHeight()) {
-        board.incrementScore1();
+        board.incrementScore2();
         del = true;
     } else if (y+radius >= board.getMaxHeight()) {
-        board.incrementScore2();
+        board.incrementScore1();
         del = true;
     } else if (x-radius <= board.getMinWidth()) {
         x_speed = abs(x_speed);
@@ -193,6 +195,19 @@ void statePause() {
 
 void stateGame() {
     LCD.Clear(LCD_COLOR_BLACK);
+    
+    // Draw the scoreboard
+    LCD.SetTextColor(LCD_COLOR_WHITE);
+    LCD.FillRect(board.getMaxWidth()-board.getMinWidth(), 0, board.getMaxWidth()-board.getMinWidth(), board.getMinHeight());
+    LCD.SetTextColor(LCD_COLOR_BLACK);
+    char score1_str[10];
+    char score2_str[10];
+    sprintf(score1_str, "%d", board.getScore1());
+    sprintf(score2_str, "%d", board.getScore2());
+    LCD.DisplayStringAt(board.getMaxWidth()-board.getMinWidth()+10, 10, (uint8_t *)score1_str, LEFT_MODE);
+    LCD.DisplayStringAt(board.getMaxWidth()-board.getMinWidth()+10, 20, (uint8_t *)score2_str, LEFT_MODE);
+
+    // Draw the board and paddles
     board.drawBalls();
     paddle1.draw();
     paddle2.draw();
