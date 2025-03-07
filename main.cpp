@@ -81,39 +81,47 @@ void Paddle::draw() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillRect(x, y, width, height);
 }
-void Paddle::moveUp() {
-    // Code to move the paddle up
+void Paddle::moveRight() {
+    if (x+width <= board.getWidth()) {
+        x = x + 0.25*width;
+        x = min(x, board.getWidth()-width);
     }
-void Paddle::moveDown() {
-    // Code to move the paddle down
+}
+void Paddle::moveLeft() {
+    if (x > 0) {
+        x = x - 0.25*width;
+        x = max(0, x);
+    }
 }
 
-Board board(240, 320);
+Board board(320, 240);
 Paddle paddle1(30, 30, board);
 Paddle paddle2(30, 200, board);
 
 // ISRs -----------------------------------
 
 void ExternalButton1ISR() {
-
+    paddle1.moveLeft();
 }
 
 void ExternalButton2ISR() {
-
+    if (curr_state == STATE_GAME) {
+        curr_state = STATE_PAUSE;
+    } else if (curr_state == STATE_PAUSE) {
+        curr_state = STATE_GAME;
+    }
 }
 
 void ExternalButton3ISR() {
-
+    paddle1.moveRight();
 }
 
 void OnboardButtonISR() {
     if (curr_state == STATE_MENU) {
         curr_state = STATE_GAME;
-    } else if (curr_state == STATE_GAME) {
-        curr_state = STATE_PAUSE;
-    } else {
-        curr_state = STATE_GAME;
-    }
+    } else if (curr_state == STATE_PAUSE) {
+        curr_state = STATE_MENU;
+    } 
 }
 
 // FSM SET UP ------------------------------
@@ -154,6 +162,9 @@ void stateGame() {
 
 int main() {
     onboard_button.fall(&OnboardButtonISR);
+    external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
+    external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
+    external_button3.attach(&ExternalButton3ISR, IRQ_FALL, 50, false);
     initializeSM();
     while (1) {
         state_table[curr_state]();

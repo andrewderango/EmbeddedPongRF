@@ -48,8 +48,8 @@ public:
     Paddle(int x, int y, Board& board);
     ~Paddle();
     void draw();
-    void moveUp();
-    void moveDown();
+    void moveRight();
+    void moveLeft();
 };
 
 // Interrupt Service Routines
