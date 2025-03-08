@@ -102,16 +102,16 @@ void Board::resetGame() {
     balls.clear();
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     paddles.clear();
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), min_height + 5, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
     score1 = 0;
     score2 = 0;
 }
 
 // BALL OBJECT METHODS
 
-Ball::Ball(int x, int y) : x(x), y(y) {
+Ball::Ball(float x, float y) : x(x), y(y) {
     radius = 3;
-    x_speed = round(randBetween(-3,3));
+    x_speed = randBetween(-3,3);//round(randBetween(-3,3));
     float randy = round(randBetween(-1,1));
     y_speed = randy/abs(randy);
     lastDrawnX = x;
@@ -129,8 +129,8 @@ void Ball::draw() {
     lastDrawnY = y;
     printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
-int Ball::getx() {return x;}
-int Ball::gety() {return y;}
+float Ball::getx() {return x;}
+float Ball::gety() {return y;}
 int Ball::getLastDrawnX() {return lastDrawnX;}
 int Ball::getLastDrawnY() {return lastDrawnY;}
 void Ball::move(Board& board, bool& del) {
@@ -261,6 +261,14 @@ void initializeSM() {
 
 float randBetween(float min, float max) {
     return (float)rand()/(float)INT_MAX*(max-min)+min;
+}
+
+float min(float a, float b) {
+    return a > b ? b : a;
+}
+
+float max(float a, float b) {
+    return a < b ? b : a;
 }
 
 // STATE FUNCTIONS ---------------------------

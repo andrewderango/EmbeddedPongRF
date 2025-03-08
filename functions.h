@@ -39,18 +39,18 @@ public:
 // Ball Class
 class Ball {
 private:
-    int x;
-    int y;
+    float x;
+    float y;
     int radius;
     float x_speed;
     float y_speed;
     int lastDrawnX;
     int lastDrawnY;
 public:
-    Ball(int x, int y);
+    Ball(float x, float y);
     ~Ball();
-    int getx();
-    int gety();
+    float getx();
+    float gety();
     int getLastDrawnX();
     int getLastDrawnY();
     void draw();
@@ -94,5 +94,7 @@ void initializeSM();
 // Helper Functions
 
 float randBetween(float min, float max);
+float min(float a, float b);
+float max(float a, float b);
 
 #endif // FUNCTION_H
