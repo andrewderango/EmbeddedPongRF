@@ -7,6 +7,8 @@
 
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
+#define AI1_ENABLED 1
+#define AI2_ENABLED 1
 
 // DEVICES --------------------------------
 
@@ -40,6 +42,8 @@ static State_Type curr_state;
 // Constructor
 Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), max_height - 10, *this);
     score1 = 0;
     score2 = 0;
 }
@@ -66,6 +70,18 @@ void Board::moveBalls() {
         }
     }
     if (balls.size() <= 0) {balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);}
+    
+    // AI opponent
+    if (balls[0].getx() < paddles[1].getLeft() && AI1_ENABLED) {
+        paddles[1].moveLeft();
+    } else if (balls[0].getx() > paddles[1].getRight() && AI1_ENABLED) {
+        paddles[1].moveRight();
+    }
+    if (balls[0].getx() < paddles[0].getLeft() && AI2_ENABLED) {
+        paddles[0].moveLeft();
+    } else if (balls[0].getx() > paddles[0].getRight() && AI2_ENABLED) {
+        paddles[0].moveRight();
+    }
 }
 void Board::incrementScore1() {score1++;}
 void Board::incrementScore2() {score2++;}
@@ -77,7 +93,7 @@ int Board::getScore2() const {return score2;}
 Ball::Ball(int x, int y) : x(x), y(y) {
     radius = 3;
     x_speed = 1;
-    y_speed = 1;
+    y_speed = -1;
 }
 Ball::~Ball() {}
 
@@ -86,6 +102,7 @@ void Ball::draw() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillCircle(x, y, radius);
 }
+int Ball::getx() {return x;}
 void Ball::move(Board& board, bool& del) {
     x = x + x_speed;
     y = y + y_speed;
@@ -105,16 +122,33 @@ void Ball::move(Board& board, bool& del) {
         x = board.getMaxWidth() - abs(x-board.getMaxWidth());
         x = min(board.getMaxWidth()-radius, x);
     }
-}
 
+    if (y-radius <= board.paddles[0].getBottom() && x <= board.paddles[0].getRight() && x >= board.paddles[0].getLeft()) {
+        y_speed = abs(y_speed);
+    } else if (y+radius >= board.paddles[1].getTop() && x <= board.paddles[1].getRight() && x >= board.paddles[1].getLeft()) {
+        y_speed = -abs(y_speed);
+    }
+}
 // PADDLE OBJECT METHODS
 
 Paddle::Paddle(int x, int y, Board& board) : x(x), y(y), board(board) {
-            height = 5;
-            width = 0.15 * (board.getMaxWidth()-board.getMinWidth());
-        }
+    height = 5;
+    width = 0.15 * (board.getMaxWidth()-board.getMinWidth());
+    }
 Paddle::~Paddle() {}
 
+int Paddle::getLeft() {
+    return x;
+}
+int Paddle::getRight() {
+    return x+width;
+}
+int Paddle::getTop() {
+    return y;
+}
+int Paddle::getBottom() {
+    return y+height;
+}
 void Paddle::draw() {
     // Code to draw the paddle at position (x, y)
     LCD.SetTextColor(LCD_COLOR_WHITE);
@@ -134,13 +168,11 @@ void Paddle::moveLeft() {
 }
 
 Board board(0, 20, 240, 320);
-Paddle paddle1((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMinHeight() + 5, board);
-Paddle paddle2((int)((float)(board.getMaxWidth()-board.getMinWidth()) / 2 - (0.15 * (board.getMaxWidth()-board.getMinWidth())) / 2), board.getMaxHeight() - 10, board);
 
 // ISRs -----------------------------------
 
 void ExternalButton1ISR() {
-    paddle1.moveLeft();
+    board.paddles[0].moveLeft();
 }
 
 void ExternalButton2ISR() {
@@ -152,7 +184,7 @@ void ExternalButton2ISR() {
 }
 
 void ExternalButton3ISR() {
-    paddle1.moveRight();
+    board.paddles[0].moveRight();
 }
 
 void OnboardButtonISR() {
@@ -215,8 +247,8 @@ void stateGame() {
 
     // Draw the board and paddles
     board.drawBalls();
-    paddle1.draw();
-    paddle2.draw();
+    board.paddles[0].draw();
+    board.paddles[1].draw();
 }
 
 // MAIN FUNCTION -----------------------------

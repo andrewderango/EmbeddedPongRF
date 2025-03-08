@@ -6,8 +6,8 @@
 
 // Forward Declarations
 class Ball;
-class Board;
 class Paddle;
+class Board;
 
 // Board Class
 class Board {
@@ -32,6 +32,7 @@ public:
     void incrementScore2();
     int getScore1() const;
     int getScore2() const;
+    std::vector<Paddle> paddles;
 };
 
 // Ball Class
@@ -45,6 +46,7 @@ private:
 public:
     Ball(int x, int y);
     ~Ball();
+    int getx();
     void draw();
     void move(Board& board, bool& del);
 };
@@ -60,6 +62,10 @@ private:
 public:
     Paddle(int x, int y, Board& board);
     ~Paddle();
+    int getLeft();
+    int getRight();
+    int getTop();
+    int getBottom();
     void draw();
     void moveRight();
     void moveLeft();
