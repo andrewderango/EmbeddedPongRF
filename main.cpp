@@ -98,6 +98,15 @@ void Board::incrementScore2() {score2++;}
 int Board::getScore1() const {return score1;}
 int Board::getScore2() const {return score2;}
 
+void Board::resetGame() {
+    balls.clear();
+    balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    paddles.clear();
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), min_height + 5, *this);
+    score1 = 0;
+    score2 = 0;
+}
+
 // BALL OBJECT METHODS
 
 Ball::Ball(int x, int y) : x(x), y(y) {
@@ -219,7 +228,17 @@ void OnboardButtonISR() {
         curr_state = STATE_GAME;
     } else if (curr_state == STATE_PAUSE) {
         curr_state = STATE_MENU;
-    } 
+    }
+
+    // // simple test functionality
+    // if (curr_state == STATE_MENU) {
+    //     curr_state = STATE_GAME;
+    // } else if (curr_state == STATE_GAME) {
+    //     curr_state = STATE_PAUSE;
+    // } else if (curr_state == STATE_PAUSE) {
+    //     curr_state = STATE_MENU;
+    //     board.resetGame();
+    // }
 }
 
 void TickerISR() {
@@ -248,8 +267,9 @@ float randBetween(float min, float max) {
 
 void stateMenu() {
     if (prev_state != curr_state) {
-        LCD.Clear(LCD_COLOR_WHITE);
-        LCD.SetTextColor(LCD_COLOR_BLACK);
+        LCD.Clear(LCD_COLOR_BLACK);
+        LCD.SetTextColor(LCD_COLOR_WHITE);
+        LCD.SetBackColor(LCD_COLOR_BLACK);
         LCD.SetFont(&Font16);
         LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
         LCD.SetFont(&Font12);
@@ -261,8 +281,18 @@ void stateMenu() {
 
 void statePause() {
     if (prev_state != curr_state) {
-        LCD.Clear(LCD_COLOR_RED);
+        LCD.Clear(LCD_COLOR_BLACK);
         prev_state = curr_state;
+
+        // Show pause screen
+        LCD.SetTextColor(LCD_COLOR_WHITE);
+        LCD.SetBackColor(LCD_COLOR_BLACK);
+        LCD.SetFont(&Font16);
+        LCD.DisplayStringAt(0, 80, (uint8_t *)"PAUSED", CENTER_MODE);
+        LCD.SetFont(&Font12);
+        LCD.DisplayStringAt(0, 100, (uint8_t *)"Press 2 to Resume", CENTER_MODE);
+        LCD.SetBackColor(LCD_COLOR_WHITE);
+        game_ticker.detach();
     }
 }
 
@@ -277,6 +307,7 @@ void stateGame() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillRect(board.getMaxWidth()-board.getMinWidth(), 0, board.getMaxWidth()-board.getMinWidth(), board.getMinHeight());
     LCD.SetTextColor(LCD_COLOR_BLACK);
+    LCD.SetBackColor(LCD_COLOR_WHITE);
     LCD.SetFont(&Font12);
     char score_str[30];
     int score1 = board.getScore1();
