@@ -70,6 +70,9 @@ void Board::moveBalls() {
         bool del = false;
         balls[i].move(*this, del);
         if (del) {
+            LCD.SetTextColor(LCD_COLOR_BLACK);
+            LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
+            // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
             balls.erase(balls.begin() + i);
             i--;
         }
@@ -115,6 +118,9 @@ void Ball::draw() {
     lastDrawnY = y;
 }
 int Ball::getx() {return x;}
+int Ball::gety() {return y;}
+int Ball::getLastDrawnX() {return lastDrawnX;}
+int Ball::getLastDrawnY() {return lastDrawnY;}
 void Ball::move(Board& board, bool& del) {
     x = x + x_speed;
     y = y + y_speed;
