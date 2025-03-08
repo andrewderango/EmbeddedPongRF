@@ -12,7 +12,7 @@
 #define AI1_ENABLED 0
 #define AI1_DIFFICULTY 5
 #define AI2_ENABLED 1
-#define AI2_DIFFICULTY 1
+#define AI2_DIFFICULTY 5
 
 // DEVICES --------------------------------
 
@@ -78,14 +78,14 @@ void Board::moveBalls() {
     
     // AI opponent
     float rand_num = randBetween(0,11);
-    if (balls[0].getx() < paddles[0].getLeft() && AI1_ENABLED && rand_num > AI1_DIFFICULTY) {
+    if (balls[0].getx() < paddles[0].getLeft() && AI1_ENABLED && rand_num < AI1_DIFFICULTY) {
         paddles[0].moveLeft();
-    } else if (balls[0].getx() > paddles[0].getRight() && AI1_ENABLED && rand_num > AI1_DIFFICULTY) {
+    } else if (balls[0].getx() > paddles[0].getRight() && AI1_ENABLED && rand_num < AI1_DIFFICULTY) {
         paddles[0].moveRight();
     }
-    if (balls[0].getx() < paddles[1].getLeft() && AI2_ENABLED && rand_num < 11-AI2_DIFFICULTY) {
+    if (balls[0].getx() < paddles[1].getLeft() && AI2_ENABLED && rand_num > 11-AI2_DIFFICULTY) {
         paddles[1].moveLeft();
-    } else if (balls[0].getx() > paddles[1].getRight() && AI2_ENABLED && rand_num < 11-AI2_DIFFICULTY) {
+    } else if (balls[0].getx() > paddles[1].getRight() && AI2_ENABLED && rand_num > 11-AI2_DIFFICULTY) {
         paddles[1].moveRight();
     }
 }
@@ -98,8 +98,9 @@ int Board::getScore2() const {return score2;}
 
 Ball::Ball(int x, int y) : x(x), y(y) {
     radius = 3;
-    x_speed = 1;
-    y_speed = -1;
+    x_speed = round(randBetween(-3,3));
+    float randy = round(randBetween(-1,1));
+    y_speed = randy/abs(randy);
     lastDrawnX = x;
     lastDrawnY = y;
 }
