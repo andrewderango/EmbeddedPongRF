@@ -8,11 +8,12 @@
 
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
+#define TICKERTIME 20ms
 // Enables the AI, and difficulty should be between 1-10 (Easy-Hard)
 #define AI1_ENABLED 0
 #define AI1_DIFFICULTY 5
 #define AI2_ENABLED 1
-#define AI2_DIFFICULTY 5
+#define AI2_DIFFICULTY 1
 
 // DEVICES --------------------------------
 
@@ -117,6 +118,7 @@ void Ball::draw() {
     LCD.FillCircle(x, y, radius);
     lastDrawnX = x;
     lastDrawnY = y;
+    printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
 int Ball::getx() {return x;}
 int Ball::gety() {return y;}
@@ -267,7 +269,7 @@ void statePause() {
 void stateGame() {
     if (prev_state != curr_state) {
         LCD.Clear(LCD_COLOR_BLACK);
-        game_ticker.attach(&TickerISR, 20ms);
+        game_ticker.attach(&TickerISR, TICKERTIME);
         prev_state = curr_state;
     }
     
