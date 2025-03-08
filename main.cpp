@@ -227,6 +227,7 @@ void OnboardButtonISR() {
     if (curr_state == STATE_MENU) {
         curr_state = STATE_GAME;
     } else if (curr_state == STATE_PAUSE) {
+        board.resetGame();
         curr_state = STATE_MENU;
     }
 
