@@ -39,7 +39,7 @@ typedef enum {
 // GLOBAL VARS ----------------------------
 
 static State_Type curr_state;
-int lcd_color;
+static State_Type prev_state = STATE_GAME;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -244,23 +244,30 @@ float randBetween(float min, float max) {
 // STATE FUNCTIONS ---------------------------
 
 void stateMenu() {
-    if (lcd_color != LCD_COLOR_BLUE) {
-        lcd_color = LCD_COLOR_BLUE;
-        LCD.Clear(lcd_color);
+    if (prev_state != curr_state) {
+        LCD.Clear(LCD_COLOR_WHITE);
+        LCD.SetTextColor(LCD_COLOR_BLACK);
+        LCD.SetFont(&Font16);
+        LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
+        LCD.SetFont(&Font12);
+        LCD.DisplayStringAt(0, 110, (uint8_t *)"1 - Play Versus AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 130, (uint8_t *)"2 - Play Versus Human", CENTER_MODE);
+        prev_state = curr_state;
     }
 }
 
 void statePause() {
-    if (lcd_color != LCD_COLOR_RED) {
-        lcd_color = LCD_COLOR_RED;
-        LCD.Clear(lcd_color);
+    if (prev_state != curr_state) {
+        LCD.Clear(LCD_COLOR_RED);
+        prev_state = curr_state;
     }
 }
 
 void stateGame() {
-    if (lcd_color != LCD_COLOR_BLACK) {
-        lcd_color = LCD_COLOR_BLACK;
-        LCD.Clear(lcd_color);
+    if (prev_state != curr_state) {
+        LCD.Clear(LCD_COLOR_BLACK);
+        game_ticker.attach(&TickerISR, 20ms);
+        prev_state = curr_state;
     }
     
     // Draw the scoreboard
@@ -285,7 +292,6 @@ void stateGame() {
 // MAIN FUNCTION -----------------------------
 
 int main() {
-    game_ticker.attach(&TickerISR, 20ms);
     onboard_button.fall(&OnboardButtonISR);
     external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
