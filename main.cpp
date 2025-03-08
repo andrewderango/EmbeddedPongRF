@@ -254,8 +254,9 @@ float randBetween(float min, float max) {
 
 void stateMenu() {
     if (prev_state != curr_state) {
-        LCD.Clear(LCD_COLOR_WHITE);
-        LCD.SetTextColor(LCD_COLOR_BLACK);
+        LCD.Clear(LCD_COLOR_BLACK);
+        LCD.SetTextColor(LCD_COLOR_WHITE);
+        LCD.SetBackColor(LCD_COLOR_BLACK);
         LCD.SetFont(&Font16);
         LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
         LCD.SetFont(&Font12);
