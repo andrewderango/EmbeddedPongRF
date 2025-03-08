@@ -111,11 +111,11 @@ void Board::resetGame() {
 
 Ball::Ball(float x, float y) : x(x), y(y) {
     radius = 3;
-    x_speed = randBetween(-3,3);//round(randBetween(-3,3));
-    float randy = round(randBetween(-1,1));
-    y_speed = randy/abs(randy);
-    lastDrawnX = x;
-    lastDrawnY = y;
+    x_speed = randBetween(-3,3);
+    y_speed = 0;
+    while (abs(y_speed) < 0.8) {y_speed = randBetween(-1.5, 1.5);}
+    lastDrawnX = round(x);
+    lastDrawnY = round(y);
 }
 Ball::~Ball() {}
 
@@ -124,9 +124,9 @@ void Ball::draw() {
     LCD.SetTextColor(LCD_COLOR_BLACK);
     LCD.FillCircle(lastDrawnX, lastDrawnY, radius);
     LCD.SetTextColor(LCD_COLOR_WHITE);
-    LCD.FillCircle(x, y, radius);
-    lastDrawnX = x;
-    lastDrawnY = y;
+    LCD.FillCircle(round(x), round(y), radius);
+    lastDrawnX = round(x);
+    lastDrawnY = round(y);
     printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
 float Ball::getx() {return x;}
