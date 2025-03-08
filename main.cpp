@@ -102,7 +102,7 @@ void Board::resetGame() {
     balls.clear();
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     paddles.clear();
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), min_height + 5, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
     score1 = 0;
     score2 = 0;
 }
@@ -227,6 +227,7 @@ void OnboardButtonISR() {
     if (curr_state == STATE_MENU) {
         curr_state = STATE_GAME;
     } else if (curr_state == STATE_PAUSE) {
+        board.resetGame();
         curr_state = STATE_MENU;
     }
 
