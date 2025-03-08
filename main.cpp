@@ -4,11 +4,15 @@
 #include "mbed.h"
 #include <time.h>
 #include <vector>
+#include <cstdlib>
 
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
-#define AI1_ENABLED 1
+// Enables the AI, and difficulty should be between 1-10 (Easy-Hard)
+#define AI1_ENABLED 0
+#define AI1_DIFFICULTY 5
 #define AI2_ENABLED 1
+#define AI2_DIFFICULTY 1
 
 // DEVICES --------------------------------
 
@@ -44,7 +48,7 @@ int lcd_color;
 Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), max_height - 10, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), max_height - 10, *this);
     score1 = 0;
     score2 = 0;
 }
@@ -66,6 +70,9 @@ void Board::moveBalls() {
         bool del = false;
         balls[i].move(*this, del);
         if (del) {
+            LCD.SetTextColor(LCD_COLOR_BLACK);
+            LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
+            // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
             balls.erase(balls.begin() + i);
             i--;
         }
@@ -73,15 +80,16 @@ void Board::moveBalls() {
     if (balls.size() <= 0) {balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);}
     
     // AI opponent
-    if (balls[0].getx() < paddles[1].getLeft() && AI1_ENABLED) {
-        paddles[1].moveLeft();
-    } else if (balls[0].getx() > paddles[1].getRight() && AI1_ENABLED) {
-        paddles[1].moveRight();
-    }
-    if (balls[0].getx() < paddles[0].getLeft() && AI2_ENABLED) {
+    float rand_num = randBetween(0,11);
+    if (balls[0].getx() < paddles[0].getLeft() && AI1_ENABLED && rand_num > AI1_DIFFICULTY) {
         paddles[0].moveLeft();
-    } else if (balls[0].getx() > paddles[0].getRight() && AI2_ENABLED) {
+    } else if (balls[0].getx() > paddles[0].getRight() && AI1_ENABLED && rand_num > AI1_DIFFICULTY) {
         paddles[0].moveRight();
+    }
+    if (balls[0].getx() < paddles[1].getLeft() && AI2_ENABLED && rand_num < 11-AI2_DIFFICULTY) {
+        paddles[1].moveLeft();
+    } else if (balls[0].getx() > paddles[1].getRight() && AI2_ENABLED && rand_num < 11-AI2_DIFFICULTY) {
+        paddles[1].moveRight();
     }
 }
 void Board::incrementScore1() {score1++;}
@@ -110,6 +118,9 @@ void Ball::draw() {
     lastDrawnY = y;
 }
 int Ball::getx() {return x;}
+int Ball::gety() {return y;}
+int Ball::getLastDrawnX() {return lastDrawnX;}
+int Ball::getLastDrawnY() {return lastDrawnY;}
 void Ball::move(Board& board, bool& del) {
     x = x + x_speed;
     y = y + y_speed;
@@ -226,7 +237,9 @@ void initializeSM() {
 
 // HELPER FUNCTIONS ------------------------
 
-
+float randBetween(float min, float max) {
+    return (float)rand()/(float)INT_MAX*(max-min)+min;
+}
 
 // STATE FUNCTIONS ---------------------------
 
@@ -277,6 +290,7 @@ int main() {
     external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
     external_button3.attach(&ExternalButton3ISR, IRQ_FALL, 50, false);
+    srand(time(NULL));
     initializeSM();
     while (1) {
         state_table[curr_state]();
