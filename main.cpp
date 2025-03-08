@@ -232,7 +232,7 @@ void ExternalButton3ISR() {
 }
 
 void OnboardButtonISR() {
-    }
+    
     if (curr_state == STATE_PAUSE) {
         board.resetGame();
         curr_state = STATE_MENU;
