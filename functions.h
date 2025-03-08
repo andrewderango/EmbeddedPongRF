@@ -49,6 +49,9 @@ public:
     Ball(int x, int y);
     ~Ball();
     int getx();
+    int gety();
+    int getLastDrawnX();
+    int getLastDrawnY();
     void draw();
     void move(Board& board, bool& del);
 };
