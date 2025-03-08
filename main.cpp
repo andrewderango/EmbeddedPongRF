@@ -213,11 +213,20 @@ void ExternalButton3ISR() {
 }
 
 void OnboardButtonISR() {
+    // if (curr_state == STATE_MENU) {
+    //     curr_state = STATE_GAME;
+    // } else if (curr_state == STATE_PAUSE) {
+    //     curr_state = STATE_MENU;
+    // }
+
+    // THIS IS A TEMPORARY CHANGE!!
     if (curr_state == STATE_MENU) {
         curr_state = STATE_GAME;
+    } else if (curr_state == STATE_GAME) {
+        curr_state = STATE_PAUSE;
     } else if (curr_state == STATE_PAUSE) {
-        curr_state = STATE_MENU;
-    } 
+        curr_state = STATE_GAME;
+    }
 }
 
 void TickerISR() {
@@ -246,8 +255,9 @@ float randBetween(float min, float max) {
 
 void stateMenu() {
     if (prev_state != curr_state) {
-        LCD.Clear(LCD_COLOR_WHITE);
-        LCD.SetTextColor(LCD_COLOR_BLACK);
+        LCD.Clear(LCD_COLOR_BLACK);
+        LCD.SetTextColor(LCD_COLOR_WHITE);
+        LCD.SetBackColor(LCD_COLOR_BLACK);
         LCD.SetFont(&Font16);
         LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
         LCD.SetFont(&Font12);
@@ -259,8 +269,18 @@ void stateMenu() {
 
 void statePause() {
     if (prev_state != curr_state) {
-        LCD.Clear(LCD_COLOR_RED);
+        LCD.Clear(LCD_COLOR_BLACK);
         prev_state = curr_state;
+
+        // Show pause screen
+        LCD.SetTextColor(LCD_COLOR_WHITE);
+        LCD.SetBackColor(LCD_COLOR_BLACK);
+        LCD.SetFont(&Font16);
+        LCD.DisplayStringAt(0, 80, (uint8_t *)"PAUSED", CENTER_MODE);
+        LCD.SetFont(&Font12);
+        LCD.DisplayStringAt(0, 100, (uint8_t *)"Press 2 to Resume", CENTER_MODE);
+        LCD.SetBackColor(LCD_COLOR_WHITE);
+        game_ticker.detach();
     }
 }
 
