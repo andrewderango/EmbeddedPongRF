@@ -213,13 +213,6 @@ void ExternalButton3ISR() {
 }
 
 void OnboardButtonISR() {
-    // if (curr_state == STATE_MENU) {
-    //     curr_state = STATE_GAME;
-    // } else if (curr_state == STATE_PAUSE) {
-    //     curr_state = STATE_MENU;
-    // }
-
-    // THIS IS A TEMPORARY CHANGE!!
     if (curr_state == STATE_MENU) {
         curr_state = STATE_GAME;
     } else if (curr_state == STATE_GAME) {
