@@ -35,6 +35,7 @@ typedef enum {
 // GLOBAL VARS ----------------------------
 
 static State_Type curr_state;
+int lcd_color;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -43,7 +44,7 @@ static State_Type curr_state;
 Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), max_height - 10, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), max_height - 10, *this);
     score1 = 0;
     score2 = 0;
 }
@@ -94,13 +95,19 @@ Ball::Ball(int x, int y) : x(x), y(y) {
     radius = 3;
     x_speed = 1;
     y_speed = -1;
+    lastDrawnX = x;
+    lastDrawnY = y;
 }
 Ball::~Ball() {}
 
 void Ball::draw() {
     // Code to draw the ball at position (x, y)
+    LCD.SetTextColor(LCD_COLOR_BLACK);
+    LCD.FillCircle(lastDrawnX, lastDrawnY, radius);
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillCircle(x, y, radius);
+    lastDrawnX = x;
+    lastDrawnY = y;
 }
 int Ball::getx() {return x;}
 void Ball::move(Board& board, bool& del) {
@@ -134,7 +141,9 @@ void Ball::move(Board& board, bool& del) {
 Paddle::Paddle(int x, int y, Board& board) : x(x), y(y), board(board) {
     height = 5;
     width = 0.15 * (board.getMaxWidth()-board.getMinWidth());
-    }
+    lastDrawnX = x;
+    lastDrawnY = y;
+}
 Paddle::~Paddle() {}
 
 int Paddle::getLeft() {
@@ -151,8 +160,12 @@ int Paddle::getBottom() {
 }
 void Paddle::draw() {
     // Code to draw the paddle at position (x, y)
+    LCD.SetTextColor(LCD_COLOR_BLACK);
+    LCD.FillRect(lastDrawnX, lastDrawnY, width, height);
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillRect(x, y, width, height);
+    lastDrawnX = x;
+    lastDrawnY = y;
 }
 void Paddle::moveRight() {
     if (x+width <= board.getMaxWidth()) {
@@ -218,15 +231,24 @@ void initializeSM() {
 // STATE FUNCTIONS ---------------------------
 
 void stateMenu() {
-    LCD.Clear(LCD_COLOR_BLUE);
+    if (lcd_color != LCD_COLOR_BLUE) {
+        lcd_color = LCD_COLOR_BLUE;
+        LCD.Clear(lcd_color);
+    }
 }
 
 void statePause() {
-    LCD.Clear(LCD_COLOR_RED);
+    if (lcd_color != LCD_COLOR_RED) {
+        lcd_color = LCD_COLOR_RED;
+        LCD.Clear(lcd_color);
+    }
 }
 
 void stateGame() {
-    // LCD.Clear(LCD_COLOR_BLACK);
+    if (lcd_color != LCD_COLOR_BLACK) {
+        lcd_color = LCD_COLOR_BLACK;
+        LCD.Clear(lcd_color);
+    }
     
     // Draw the scoreboard
     LCD.SetTextColor(LCD_COLOR_WHITE);
@@ -240,8 +262,8 @@ void stateGame() {
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
     // Draw the board and paddles
-    LCD.SetTextColor(LCD_COLOR_BLACK);
-    LCD.FillRect(board.getMinWidth(), board.getMinHeight(), board.getMaxWidth()-board.getMinWidth(), board.getMaxHeight()-board.getMinHeight());
+    // LCD.SetTextColor(LCD_COLOR_BLACK);
+    // LCD.FillRect(board.getMinWidth(), board.getMinHeight(), board.getMaxWidth()-board.getMinWidth(), board.getMaxHeight()-board.getMinHeight());
     board.drawBalls();
     board.paddles[0].draw();
     board.paddles[1].draw();

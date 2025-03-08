@@ -43,6 +43,8 @@ private:
     int radius;
     float x_speed;
     float y_speed;
+    int lastDrawnX;
+    int lastDrawnY;
 public:
     Ball(int x, int y);
     ~Ball();
@@ -58,6 +60,8 @@ private:
     int y;
     int height;
     int width;
+    int lastDrawnX;
+    int lastDrawnY;
     Board& board;
 public:
     Paddle(int x, int y, Board& board);
