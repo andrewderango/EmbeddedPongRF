@@ -208,7 +208,11 @@ Board board(0, 20, 240, 320);
 // ISRs -----------------------------------
 
 void ExternalButton1ISR() {
-    board.paddles[0].moveLeft();
+    if (curr_state == STATE_GAME) {
+        board.paddles[0].moveLeft();
+    } else if (curr_state == STATE_MENU) {
+        curr_state = STATE_GAME;
+    }
 }
 
 void ExternalButton2ISR() {
@@ -216,17 +220,20 @@ void ExternalButton2ISR() {
         curr_state = STATE_PAUSE;
     } else if (curr_state == STATE_PAUSE) {
         curr_state = STATE_GAME;
+    } else if (curr_state == STATE_MENU) {
+        curr_state = STATE_GAME;
     }
 }
 
 void ExternalButton3ISR() {
-    board.paddles[0].moveRight();
+    if (curr_state == STATE_GAME) {
+        board.paddles[0].moveRight();
+    }
 }
 
 void OnboardButtonISR() {
-    if (curr_state == STATE_MENU) {
-        curr_state = STATE_GAME;
-    } else if (curr_state == STATE_PAUSE) {
+    }
+    if (curr_state == STATE_PAUSE) {
         board.resetGame();
         curr_state = STATE_MENU;
     }
@@ -292,6 +299,7 @@ void statePause() {
         LCD.DisplayStringAt(0, 80, (uint8_t *)"PAUSED", CENTER_MODE);
         LCD.SetFont(&Font12);
         LCD.DisplayStringAt(0, 100, (uint8_t *)"Press 2 to Resume", CENTER_MODE);
+        LCD.DisplayStringAt(0, 120, (uint8_t *)"Press OBB to Quit", CENTER_MODE);
         LCD.SetBackColor(LCD_COLOR_WHITE);
         game_ticker.detach();
     }
