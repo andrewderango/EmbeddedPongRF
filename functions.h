@@ -32,6 +32,7 @@ public:
     void incrementScore2();
     int getScore1() const;
     int getScore2() const;
+    void resetGame();
     std::vector<Paddle> paddles;
 };
 

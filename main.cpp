@@ -97,6 +97,15 @@ void Board::incrementScore2() {score2++;}
 int Board::getScore1() const {return score1;}
 int Board::getScore2() const {return score2;}
 
+void Board::resetGame() {
+    balls.clear();
+    balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    paddles.clear();
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), min_height + 5, *this);
+    score1 = 0;
+    score2 = 0;
+}
+
 // BALL OBJECT METHODS
 
 Ball::Ball(int x, int y) : x(x), y(y) {
@@ -215,11 +224,19 @@ void ExternalButton3ISR() {
 void OnboardButtonISR() {
     if (curr_state == STATE_MENU) {
         curr_state = STATE_GAME;
-    } else if (curr_state == STATE_GAME) {
-        curr_state = STATE_PAUSE;
     } else if (curr_state == STATE_PAUSE) {
-        curr_state = STATE_GAME;
+        curr_state = STATE_MENU;
     }
+
+    // // simple test functionality
+    // if (curr_state == STATE_MENU) {
+    //     curr_state = STATE_GAME;
+    // } else if (curr_state == STATE_GAME) {
+    //     curr_state = STATE_PAUSE;
+    // } else if (curr_state == STATE_PAUSE) {
+    //     curr_state = STATE_MENU;
+    //     board.resetGame();
+    // }
 }
 
 void TickerISR() {
