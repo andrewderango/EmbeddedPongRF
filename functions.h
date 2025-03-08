@@ -87,4 +87,8 @@ void statePause();
 void stateGame();
 void initializeSM();
 
+// Helper Functions
+
+float randBetween(float min, float max);
+
 #endif // FUNCTION_H
