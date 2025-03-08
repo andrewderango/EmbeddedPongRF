@@ -295,6 +295,7 @@ void stateGame() {
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillRect(board.getMaxWidth()-board.getMinWidth(), 0, board.getMaxWidth()-board.getMinWidth(), board.getMinHeight());
     LCD.SetTextColor(LCD_COLOR_BLACK);
+    LCD.SetBackColor(LCD_COLOR_WHITE);
     LCD.SetFont(&Font12);
     char score_str[30];
     int score1 = board.getScore1();
