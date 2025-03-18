@@ -75,7 +75,9 @@ void Board::moveBalls() {
             i--;
         }
     }
-    if (balls.size() <= 0) {balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);}
+    if (balls.size() <= 0) {
+        balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    }
     
     // AI opponent
     float rand_num = randBetween(0,11);
@@ -90,10 +92,10 @@ void Board::moveBalls() {
         paddles[1].moveRight();
     }
 }
-void Board::incrementScore1() {score1++;}
-void Board::incrementScore2() {score2++;}
-int Board::getScore1() const {return score1;}
-int Board::getScore2() const {return score2;}
+void Board::incrementScore1() { score1++; }
+void Board::incrementScore2() { score2++; }
+int Board::getScore1() const { return score1; }
+int Board::getScore2() const { return score2; }
 
 void Board::resetGame() {
     balls.clear();
@@ -110,6 +112,10 @@ void Board::setAI1Enabled(bool enabled) {
 
 void Board::setAI2Enabled(bool enabled) {
     ai2_enabled = enabled;
+}
+
+void Board::setWireless(bool enabled) {
+    wireless = enabled;
 }
 
 // BALL OBJECT METHODS
@@ -134,10 +140,10 @@ void Ball::draw() {
     lastDrawnY = round(y);
     printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
-float Ball::getx() {return x;}
-float Ball::gety() {return y;}
-int Ball::getLastDrawnX() {return lastDrawnX;}
-int Ball::getLastDrawnY() {return lastDrawnY;}
+float Ball::getx() { return x; }
+float Ball::gety() { return y; }
+int Ball::getLastDrawnX() { return lastDrawnX; }
+int Ball::getLastDrawnY() { return lastDrawnY; }
 void Ball::move(Board& board, bool& del) {
     x = x + x_speed;
     y = y + y_speed;
@@ -218,6 +224,7 @@ void ExternalButton1ISR() {
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(true);
         board.setAI2Enabled(true);
+        board.setWireless(false);
         curr_state = STATE_GAME;
     }
 }
@@ -230,6 +237,7 @@ void ExternalButton2ISR() {
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
         board.setAI2Enabled(true);
+        board.setWireless(false);
         curr_state = STATE_GAME;
     }
 }
@@ -240,6 +248,7 @@ void ExternalButton3ISR() {
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
         board.setAI2Enabled(false);
+        board.setWireless(false);
         curr_state = STATE_GAME;
     }
 }
@@ -252,6 +261,7 @@ void OnboardButtonISR() {
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
         board.setAI2Enabled(false);
+        board.setWireless(true);
         curr_state = STATE_GAME;
     }
 
