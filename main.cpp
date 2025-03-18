@@ -9,11 +9,8 @@
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
 #define TICKERTIME 20ms
-// Enables the AI, and difficulty should be between 1-10 (Easy-Hard)
-#define AI1_ENABLED 0
-#define AI1_DIFFICULTY 5
-#define AI2_ENABLED 1
-#define AI2_DIFFICULTY 1
+#define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
+#define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
 
 // DEVICES --------------------------------
 
@@ -82,14 +79,14 @@ void Board::moveBalls() {
     
     // AI opponent
     float rand_num = randBetween(0,11);
-    if (balls[0].getx() < paddles[0].getLeft() && AI1_ENABLED && rand_num < AI1_DIFFICULTY) {
+    if (balls[0].getx() < paddles[0].getLeft() && ai1_enabled && rand_num < AI1_DIFFICULTY) {
         paddles[0].moveLeft();
-    } else if (balls[0].getx() > paddles[0].getRight() && AI1_ENABLED && rand_num < AI1_DIFFICULTY) {
+    } else if (balls[0].getx() > paddles[0].getRight() && ai1_enabled && rand_num < AI1_DIFFICULTY) {
         paddles[0].moveRight();
     }
-    if (balls[0].getx() < paddles[1].getLeft() && AI2_ENABLED && rand_num > 11-AI2_DIFFICULTY) {
+    if (balls[0].getx() < paddles[1].getLeft() && ai2_enabled && rand_num > 11-AI2_DIFFICULTY) {
         paddles[1].moveLeft();
-    } else if (balls[0].getx() > paddles[1].getRight() && AI2_ENABLED && rand_num > 11-AI2_DIFFICULTY) {
+    } else if (balls[0].getx() > paddles[1].getRight() && ai2_enabled && rand_num > 11-AI2_DIFFICULTY) {
         paddles[1].moveRight();
     }
 }
@@ -105,6 +102,14 @@ void Board::resetGame() {
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
     score1 = 0;
     score2 = 0;
+}
+
+void Board::setAI1Enabled(bool enabled) {
+    ai1_enabled = enabled;
+}
+
+void Board::setAI2Enabled(bool enabled) {
+    ai2_enabled = enabled;
 }
 
 // BALL OBJECT METHODS
@@ -211,6 +216,8 @@ void ExternalButton1ISR() {
     if (curr_state == STATE_GAME) {
         board.paddles[0].moveLeft();
     } else if (curr_state == STATE_MENU) {
+        board.setAI1Enabled(true);
+        board.setAI2Enabled(true);
         curr_state = STATE_GAME;
     }
 }
@@ -221,6 +228,8 @@ void ExternalButton2ISR() {
     } else if (curr_state == STATE_PAUSE) {
         curr_state = STATE_GAME;
     } else if (curr_state == STATE_MENU) {
+        board.setAI1Enabled(false);
+        board.setAI2Enabled(true);
         curr_state = STATE_GAME;
     }
 }
@@ -228,6 +237,10 @@ void ExternalButton2ISR() {
 void ExternalButton3ISR() {
     if (curr_state == STATE_GAME) {
         board.paddles[0].moveRight();
+    } else if (curr_state == STATE_MENU) {
+        board.setAI1Enabled(false);
+        board.setAI2Enabled(false);
+        curr_state = STATE_GAME;
     }
 }
 
@@ -236,6 +249,10 @@ void OnboardButtonISR() {
     if (curr_state == STATE_PAUSE) {
         board.resetGame();
         curr_state = STATE_MENU;
+    } else if (curr_state == STATE_MENU) {
+        board.setAI1Enabled(false);
+        board.setAI2Enabled(false);
+        curr_state = STATE_GAME;
     }
 
     // // simple test functionality
@@ -289,10 +306,10 @@ void stateMenu() {
         LCD.SetFont(&Font16);
         LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
         LCD.SetFont(&Font12);
-        LCD.DisplayStringAt(0, 110, (uint8_t *)"TBD - AI vs AI", CENTER_MODE);
-        LCD.DisplayStringAt(0, 130, (uint8_t *)"1 - Human vs AI", CENTER_MODE);
-        LCD.DisplayStringAt(0, 150, (uint8_t *)"2 - Human vs Human (Local)", CENTER_MODE);
-        LCD.DisplayStringAt(0, 170, (uint8_t *)"TBD - Human vs Human (Wireless)", CENTER_MODE);
+        LCD.DisplayStringAt(0, 110, (uint8_t *)"1 - AI vs AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 130, (uint8_t *)"2 - Human vs AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 150, (uint8_t *)"3 - Human vs Human (Local)", CENTER_MODE);
+        LCD.DisplayStringAt(0, 170, (uint8_t *)"OBB - Human vs Human (Wireless)", CENTER_MODE);
         prev_state = curr_state;
     }
 }
