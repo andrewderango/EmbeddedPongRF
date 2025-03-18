@@ -19,6 +19,9 @@ private:
     std::vector<Ball> balls;
     int score1;
     int score2;
+    bool ai1_enabled;
+    bool ai2_enabled;
+    bool wireless;
 public:
     Board(int min_width, int min_height, int max_width, int max_height);
     ~Board();
@@ -33,6 +36,9 @@ public:
     int getScore1() const;
     int getScore2() const;
     void resetGame();
+    void setAI1Enabled(bool enabled);
+    void setAI2Enabled(bool enabled);
+    void setWireless(bool enabled);
     std::vector<Paddle> paddles;
 };
 
