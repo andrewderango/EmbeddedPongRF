@@ -289,8 +289,10 @@ void stateMenu() {
         LCD.SetFont(&Font16);
         LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
         LCD.SetFont(&Font12);
-        LCD.DisplayStringAt(0, 110, (uint8_t *)"1 - Play Versus AI", CENTER_MODE);
-        LCD.DisplayStringAt(0, 130, (uint8_t *)"2 - Play Versus Human", CENTER_MODE);
+        LCD.DisplayStringAt(0, 110, (uint8_t *)"TBD - AI vs AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 130, (uint8_t *)"1 - Human vs AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 150, (uint8_t *)"2 - Human vs Human (Local)", CENTER_MODE);
+        LCD.DisplayStringAt(0, 170, (uint8_t *)"TBD - Human vs Human (Wireless)", CENTER_MODE);
         prev_state = curr_state;
     }
 }
@@ -351,6 +353,6 @@ int main() {
     initializeSM();
     while (1) {
         state_table[curr_state]();
-        thread_sleep_for(20);
+        ThisThread::sleep_for(20ms);
     }
 }
