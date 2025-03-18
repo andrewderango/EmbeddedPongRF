@@ -6,14 +6,19 @@
 #include <vector>
 #include <cstdlib>
 
+#define RCC_AHB2ENR    (*(volatile uint32_t *)(RCC_BASE + 0x34))    // AHB2 Peripheral Clock Enable register
+#define RNG_CR         (*(volatile uint32_t *)(RNG_BASE + 0x00))    // RNG Control register
+#define RNG_SR         (*(volatile uint32_t *)(RNG_BASE + 0x04))    // RNG Status register
+#define RNG_DR         (*(volatile uint32_t *)(RNG_BASE + 0x08))    // RNG Data register
+
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
 #define TICKERTIME 20ms
 // Enables the AI, and difficulty should be between 1-10 (Easy-Hard)
-#define AI1_ENABLED 0
+#define AI1_ENABLED 1
 #define AI1_DIFFICULTY 5
 #define AI2_ENABLED 1
-#define AI2_DIFFICULTY 1
+#define AI2_DIFFICULTY 3
 
 // DEVICES --------------------------------
 
@@ -47,6 +52,7 @@ static State_Type prev_state = STATE_GAME;
         
 // Constructor
 Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
+    rng_init();
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), max_height - 10, *this);
@@ -267,8 +273,24 @@ void initializeSM() {
 
 // HELPER FUNCTIONS ------------------------
 
+void rng_init() {
+    RCC_AHB2ENR |= RCC_AHB2ENR_RNGEN;   // Enables RNG clock
+    wait_us(100);                       // Small delay to ensure clock stablity
+    RNG_CR |= RNG_CR_RNGEN;             // Enables RNG peripheral
+}
+
+uint32_t rng_get_random_number() {
+    while (!(RNG_SR & RNG_SR_DRDY)) { }         // Wait for a new random number to be avaliable
+    if (RNG_SR & (RNG_SR_SEIS | RNG_SR_CEIS)) { // If there is a seed or clock error it turns the RNG off and back on
+        RNG_CR &= ~RNG_CR_RNGEN;
+        RNG_CR |= RNG_CR_RNGEN;
+        return 0;
+    }
+    return RNG_DR;  // Returns the random 32-bit number from the RNG_DR register
+}
+
 float randBetween(float min, float max) {
-    return (float)rand()/(float)INT_MAX*(max-min)+min;
+    return ((float)(rng_get_random_number() % 1000000))/1000000.0 * (max-min)+min;
 }
 
 float min(float a, float b) {
@@ -347,7 +369,6 @@ int main() {
     external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
     external_button3.attach(&ExternalButton3ISR, IRQ_FALL, 50, false);
-    srand(time(NULL));
     initializeSM();
     while (1) {
         state_table[curr_state]();

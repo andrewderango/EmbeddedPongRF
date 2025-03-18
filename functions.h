@@ -92,7 +92,8 @@ void stateGame();
 void initializeSM();
 
 // Helper Functions
-
+void rng_init();
+uint32_t rng_get_random_number();
 float randBetween(float min, float max);
 float min(float a, float b);
 float max(float a, float b);
