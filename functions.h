@@ -17,6 +17,7 @@ private:
     int min_width;
     int max_width;
     std::vector<Ball> balls;
+    int maxNumOfBalls = 10;
     int score1;
     int score2;
     bool ai1_enabled;
@@ -29,6 +30,7 @@ public:
     int getMinWidth() const;
     int getMaxHeight() const;
     int getMaxWidth() const;
+    void spawnBall();
     void drawBalls();
     void moveBalls();
     void incrementScore1();

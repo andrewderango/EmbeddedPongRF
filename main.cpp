@@ -44,6 +44,7 @@ typedef enum {
 
 static State_Type curr_state;
 static State_Type prev_state = STATE_GAME;
+bool spawn_ball_flag = false;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -99,6 +100,13 @@ void Board::moveBalls() {
         paddles[1].moveRight();
     }
 }
+
+void Board::spawnBall() {
+    if (balls.size() < maxNumOfBalls) {
+        balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    }
+}
+
 void Board::incrementScore1() { score1++; }
 void Board::incrementScore2() { score2++; }
 int Board::getScore1() const { return score1; }
@@ -129,9 +137,10 @@ void Board::setWireless(bool enabled) {
 
 Ball::Ball(float x, float y) : x(x), y(y) {
     radius = 3;
-    x_speed = randBetween(-3,3);
     y_speed = 0;
     while (abs(y_speed) < 0.8) {y_speed = randBetween(-1.5, 1.5);}
+    float sign = randBetween(-0.5,0.5);
+    x_speed = sign/abs(sign)*sqrt(abs(pow(randBetween(1.5, 2.5),2)-y_speed*y_speed));
     lastDrawnX = round(x);
     lastDrawnY = round(y);
 }
@@ -142,9 +151,9 @@ void Ball::draw() {
     LCD.SetTextColor(LCD_COLOR_BLACK);
     LCD.FillCircle(lastDrawnX, lastDrawnY, radius);
     LCD.SetTextColor(LCD_COLOR_WHITE);
-    LCD.FillCircle(round(x), round(y), radius);
     lastDrawnX = round(x);
     lastDrawnY = round(y);
+    LCD.FillCircle(lastDrawnX, lastDrawnY, radius); // draw ball using the updated last drawn positions to limit visual artifacts
     printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
 float Ball::getx() { return x; }
@@ -172,9 +181,13 @@ void Ball::move(Board& board, bool& del) {
     }
 
     if (y-radius <= board.paddles[0].getBottom() && x <= board.paddles[0].getRight() && x >= board.paddles[0].getLeft()) {
-        y_speed = abs(y_speed);
+        y_speed = abs(y_speed)*randBetween(1, 1.05);
+        x_speed = x_speed*randBetween(1, 1.05);
+        if (abs(x_speed) < 0.5) {x_speed+=randBetween(-0.5, 0.5);}
     } else if (y+radius >= board.paddles[1].getTop() && x <= board.paddles[1].getRight() && x >= board.paddles[1].getLeft()) {
-        y_speed = -abs(y_speed);
+        y_speed = -abs(y_speed)*randBetween(1, 1.05);
+        x_speed = x_speed*randBetween(1, 1.05);
+        if (abs(x_speed) < 0.5) {x_speed+=randBetween(-0.5, 0.5);}
     }
 }
 // PADDLE OBJECT METHODS
@@ -262,7 +275,9 @@ void ExternalButton3ISR() {
 
 void OnboardButtonISR() {
     
-    if (curr_state == STATE_PAUSE) {
+    if (curr_state == STATE_GAME) {
+        spawn_ball_flag = true;
+    } else if (curr_state == STATE_PAUSE) {
         board.resetGame();
         curr_state = STATE_MENU;
     } else if (curr_state == STATE_MENU) {
@@ -387,6 +402,10 @@ void stateGame() {
     // Draw the board and paddles
     // LCD.SetTextColor(LCD_COLOR_BLACK);
     // LCD.FillRect(board.getMinWidth(), board.getMinHeight(), board.getMaxWidth()-board.getMinWidth(), board.getMaxHeight()-board.getMinHeight());
+    if (spawn_ball_flag) {
+        board.spawnBall();
+        spawn_ball_flag = false;
+    }
     board.drawBalls();
     board.paddles[0].draw();
     board.paddles[1].draw();
