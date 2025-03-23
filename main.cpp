@@ -63,10 +63,10 @@ Board::Board(int min_width, int min_height, int max_width, int max_height) : min
 // Destructor
 Board::~Board() {}
 
-int Board::getMinHeight() const {return min_height;}
-int Board::getMinWidth() const {return min_width;}
-int Board::getMaxHeight() const {return max_height;}
-int Board::getMaxWidth() const {return max_width;}
+int Board::getMinHeight() const { return min_height; }
+int Board::getMinWidth() const { return min_width; }
+int Board::getMaxHeight() const { return max_height; }
+int Board::getMaxWidth() const { return max_width; }
 void Board::drawBalls() {
     for (int i = 0; i < balls.size(); i++) {
         balls[i].draw();
@@ -148,13 +148,12 @@ Ball::Ball(float x, float y) : x(x), y(y) {
 Ball::~Ball() {}
 
 void Ball::draw() {
-    // Code to draw the ball at position (x, y)
     LCD.SetTextColor(LCD_COLOR_BLACK);
     LCD.FillCircle(lastDrawnX, lastDrawnY, radius);
     LCD.SetTextColor(LCD_COLOR_WHITE);
     lastDrawnX = round(x);
     lastDrawnY = round(y);
-    LCD.FillCircle(lastDrawnX, lastDrawnY, radius); // draw ball using the updated last drawn positions to limit visual artifacts
+    LCD.FillCircle(lastDrawnX, lastDrawnY, radius);
     printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
 float Ball::getx() { return x; }

@@ -9,22 +9,22 @@ The message is structured as follows:
 | Byte Index | Description                        |
 |------------|------------------------------------|
 | 0          | Number of balls (1 byte)           |
-| 1-20       | Positions of balls (4 bytes each)  |
-| 21         | Position of Paddle 1 (1 byte)      |
-| 22         | Position of Paddle 2 (1 byte)      |
-| 23-24      | Score of Team 1 (2 bytes)          |
-| 25-26      | Score of Team 2 (2 bytes)          |
-| 27         | Game State (1 byte)                |
+| 1-24       | Positions of balls (3 bytes each)  |
+| 25         | Position of Paddle 1 (1 byte)      |
+| 26         | Position of Paddle 2 (1 byte)      |
+| 27         | Score of Team 1 (1 byte)           |
+| 28         | Score of Team 2 (1 byte)           |
+| 29         | Game State (1 byte)                |
 
 ### Detailed Byte Breakdown
 
 1. **Number of Balls (1 byte)**
-   - This byte indicates the number of balls currently in play. The maximum value is 5.
+   - This byte indicates the number of balls currently in play. The maximum value is 8.
 
-2. **Positions of Balls (20 bytes)**
-   - Each ball's position is represented by 4 bytes (2 bytes for X coordinate and 2 bytes for Y coordinate).
-   - The first ball's position is stored in bytes 1 to 4, the second ball's position in bytes 5 to 8, and so on.
-   - If there are fewer than 5 balls, the remaining bytes are set to 0.
+2. **Positions of Balls (24 bytes)**
+   - Each ball's position is represented by 3 bytes (1 byte for X coordinate and 2 bytes for Y coordinate).
+   - The first ball's position is stored in bytes 1 to 3, the second ball's position in bytes 4 to 6, and so on.
+   - If there are fewer than 8 balls, the remaining bytes are set to 0.
 
 3. **Position of Paddle 1 (1 byte)**
    - The X position of Paddle 1 is represented by 1 byte.
@@ -32,11 +32,11 @@ The message is structured as follows:
 4. **Position of Paddle 2 (1 byte)**
    - The X position of Paddle 2 is represented by 1 byte.
 
-5. **Score of Team 1 (2 bytes)**
-   - The score of Team 1 is represented by 2 bytes.
+5. **Score of Team 1 (1 byte)**
+   - The score of Team 1 is represented by 1 byte.
 
-6. **Score of Team 2 (2 bytes)**
-   - The score of Team 2 is represented by 2 bytes.
+6. **Score of Team 2 (1 byte)**
+   - The score of Team 2 is represented by 1 byte.
 
 7. **Game State (1 byte)**
    - This byte indicates the current state of the game:
@@ -51,16 +51,16 @@ For example, if there are 2 balls with positions (10, 20) and (30, 40), Paddle 1
 | Byte Index | Value |
 |------------|-------|
 | 0          | 2     |
-| 1-2        | 10    |
-| 3-4        | 20    |
-| 5-6        | 30    |
-| 7-8        | 40    |
-| 9-20       | 0     |
-| 21         | 50    |
-| 22         | 60    |
-| 23-24      | 5     |
-| 25-26      | 3     |
-| 27         | 2     |
+| 1          | 10    |
+| 2-3        | 20    |
+| 4          | 30    |
+| 5-6        | 40    |
+| 7-24       | 0     |
+| 25         | 50    |
+| 26         | 60    |
+| 27         | 5     |
+| 28         | 3     |
+| 29         | 2     |
 
 This message is then transmitted over the wireless communication channel.
 

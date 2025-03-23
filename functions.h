@@ -17,7 +17,7 @@ private:
     int min_width;
     int max_width;
     std::vector<Ball> balls;
-    int maxNumOfBalls = 10;
+    int maxNumOfBalls = 6;
     int score1;
     int score2;
     bool ai1_enabled;
