@@ -3,6 +3,7 @@
 #include "DebouncedInterrupt.h"
 #include "mbed.h"
 #include <time.h>
+#include <type_traits>
 #include <vector>
 #include <cstdlib>
 
@@ -238,11 +239,36 @@ Board board(0, 20, 240, 320);
 
 // ISRs -----------------------------------
 
+void OnboardButtonISR() {
+    
+    if (curr_state == STATE_GAME) {
+        spawn_ball_flag = true;
+    } else if (curr_state == STATE_PAUSE) {
+        board.resetGame();
+        curr_state = STATE_MENU;
+    } else if (curr_state == STATE_MENU) {
+        board.setAI1Enabled(true);
+        board.setAI2Enabled(true);
+        board.setWireless(true);
+        curr_state = STATE_GAME;
+    }
+
+    // // simple test functionality
+    // if (curr_state == STATE_MENU) {
+    //     curr_state = STATE_GAME;
+    // } else if (curr_state == STATE_GAME) {
+    //     curr_state = STATE_PAUSE;
+    // } else if (curr_state == STATE_PAUSE) {
+    //     curr_state = STATE_MENU;
+    //     board.resetGame();
+    // }
+}
+
 void ExternalButton1ISR() {
     if (curr_state == STATE_GAME) {
         board.paddles[0].moveLeft();
     } else if (curr_state == STATE_MENU) {
-        board.setAI1Enabled(true);
+        board.setAI1Enabled(false);
         board.setAI2Enabled(true);
         board.setWireless(false);
         curr_state = STATE_GAME;
@@ -256,7 +282,7 @@ void ExternalButton2ISR() {
         curr_state = STATE_GAME;
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
-        board.setAI2Enabled(true);
+        board.setAI2Enabled(false);
         board.setWireless(false);
         curr_state = STATE_GAME;
     }
@@ -271,31 +297,6 @@ void ExternalButton3ISR() {
         board.setWireless(false);
         curr_state = STATE_GAME;
     }
-}
-
-void OnboardButtonISR() {
-    
-    if (curr_state == STATE_GAME) {
-        spawn_ball_flag = true;
-    } else if (curr_state == STATE_PAUSE) {
-        board.resetGame();
-        curr_state = STATE_MENU;
-    } else if (curr_state == STATE_MENU) {
-        board.setAI1Enabled(false);
-        board.setAI2Enabled(false);
-        board.setWireless(true);
-        curr_state = STATE_GAME;
-    }
-
-    // // simple test functionality
-    // if (curr_state == STATE_MENU) {
-    //     curr_state = STATE_GAME;
-    // } else if (curr_state == STATE_GAME) {
-    //     curr_state = STATE_PAUSE;
-    // } else if (curr_state == STATE_PAUSE) {
-    //     curr_state = STATE_MENU;
-    //     board.resetGame();
-    // }
 }
 
 void TickerISR() {
@@ -354,10 +355,10 @@ void stateMenu() {
         LCD.SetFont(&Font16);
         LCD.DisplayStringAt(0, 80, (uint8_t *)"WELCOME TO PONG", CENTER_MODE);
         LCD.SetFont(&Font12);
-        LCD.DisplayStringAt(0, 110, (uint8_t *)"1 - AI vs AI", CENTER_MODE);
-        LCD.DisplayStringAt(0, 130, (uint8_t *)"2 - Human vs AI", CENTER_MODE);
-        LCD.DisplayStringAt(0, 150, (uint8_t *)"3 - Human vs Human (Local)", CENTER_MODE);
-        LCD.DisplayStringAt(0, 170, (uint8_t *)"OBB - Human vs Human (Wireless)", CENTER_MODE);
+        LCD.DisplayStringAt(0, 110, (uint8_t *)"OBB - AI vs AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 130, (uint8_t *)"1 - Human vs AI", CENTER_MODE);
+        LCD.DisplayStringAt(0, 150, (uint8_t *)"2 - Human vs Human (Local)", CENTER_MODE);
+        LCD.DisplayStringAt(0, 170, (uint8_t *)"3 - Human vs Human (Wireless)", CENTER_MODE);
         prev_state = curr_state;
     }
 }
