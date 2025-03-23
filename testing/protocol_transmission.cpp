@@ -4,6 +4,9 @@
 
 #define TRANSFER_SIZE 30
 
+// transmitter: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
+// receiver: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+
 // mosi, miso, sck, nsc, ce, irq
 nRF24L01P transmitter(PE_14, PE_13, PE_12, PE_11, PE_9);
 

@@ -19,6 +19,9 @@
 #define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
 
+// transmitter: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
+// receiver: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+
 // DEVICES --------------------------------
 
 LCD_DISCO_F429ZI LCD;
