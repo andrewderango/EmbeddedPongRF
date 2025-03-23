@@ -21,8 +21,8 @@
 // DEVICES --------------------------------
 
 LCD_DISCO_F429ZI LCD;
-I2C i2c(SDA_PIN, SCL_PIN);
-DigitalOut led(PG_14);
+DigitalOut red_led(PG_13);
+DigitalOut green_led(PG_14);
 Ticker game_ticker;
 
 // INTERRUPTS -----------------------------
@@ -35,9 +35,9 @@ DebouncedInterrupt external_button3(PA_7);
 // DATA TYPES -----------------------------
 
 typedef enum {
-  STATE_MENU = 0,
-  STATE_PAUSE = 1,
-  STATE_GAME = 2,
+    STATE_MENU = 0,
+    STATE_PAUSE = 1,
+    STATE_GAME = 2,
 } State_Type;
 
 // GLOBAL VARS ----------------------------
@@ -138,7 +138,7 @@ void Board::setWireless(bool enabled) {
 Ball::Ball(float x, float y) : x(x), y(y) {
     radius = 3;
     y_speed = 0;
-    while (abs(y_speed) < 0.8) {y_speed = randBetween(-1.5, 1.5);}
+    while (abs(y_speed) < 0.8) { y_speed = randBetween(-1.5, 1.5); }
     float sign = randBetween(-0.5,0.5);
     x_speed = sign/abs(sign)*sqrt(abs(pow(randBetween(1.5, 2.5),2)-y_speed*y_speed));
     lastDrawnX = round(x);
@@ -311,7 +311,7 @@ void stateGame();
 static void (*state_table[])(void) = {stateMenu, statePause, stateGame};
 
 void initializeSM() {
-  curr_state = STATE_MENU;
+    curr_state = STATE_MENU;
 }
 
 // HELPER FUNCTIONS ------------------------
