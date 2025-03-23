@@ -1,6 +1,6 @@
 # Serial Protocol Documentation
 
-This document describes the serial protocol used for wireless communication in the Pong Embedded System. The protocol is designed to send the number of balls, the position of each ball, the position of each paddle, and the score of each team.
+This document describes the serial protocol used for wireless communication in the Pong Embedded System. The protocol is designed to send the number of balls, the position of each ball, the position of each paddle, the score of each team, and the game state.
 
 ## Master Message Format
 
@@ -14,7 +14,7 @@ The message is structured as follows:
 | 22         | Position of Paddle 2 (1 byte)      |
 | 23-24      | Score of Team 1 (2 bytes)          |
 | 25-26      | Score of Team 2 (2 bytes)          |
-| 27         | Stop byte (1 byte)                 |
+| 27         | Game State (1 byte)                |
 
 ### Detailed Byte Breakdown
 
@@ -38,12 +38,15 @@ The message is structured as follows:
 6. **Score of Team 2 (2 bytes)**
    - The score of Team 2 is represented by 2 bytes.
 
-7. **Stop Byte (1 byte)**
-   - This byte is set to `0x00` to indicate the end of the message.
+7. **Game State (1 byte)**
+   - This byte indicates the current state of the game:
+     - 0: Menu
+     - 1: Pause
+     - 2: Game
 
 ### Example Message
 
-For example, if there are 2 balls with positions (10, 20) and (30, 40), Paddle 1 at position 50, Paddle 2 at position 60, Team 1 score is 5, and Team 2 score is 3, the message would be:
+For example, if there are 2 balls with positions (10, 20) and (30, 40), Paddle 1 at position 50, Paddle 2 at position 60, Team 1 score is 5, Team 2 score is 3, and the game is in the "Game" state, the message would be:
 
 | Byte Index | Value |
 |------------|-------|
@@ -57,7 +60,7 @@ For example, if there are 2 balls with positions (10, 20) and (30, 40), Paddle 1
 | 22         | 60    |
 | 23-24      | 5     |
 | 25-26      | 3     |
-| 27         | 0     |
+| 27         | 2     |
 
 This message is then transmitted over the wireless communication channel.
 

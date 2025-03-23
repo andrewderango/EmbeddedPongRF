@@ -74,9 +74,9 @@ void Board::drawBalls() {
 }
 void Board::moveBalls() {
     for (int i = 0; i < balls.size(); i++) {
-        bool del = false;
-        balls[i].move(*this, del);
-        if (del) {
+        bool delete_ball = false;
+        balls[i].move(*this, delete_ball);
+        if (delete_ball) {
             LCD.SetTextColor(LCD_COLOR_BLACK);
             LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
             // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
@@ -161,16 +161,16 @@ float Ball::getx() { return x; }
 float Ball::gety() { return y; }
 int Ball::getLastDrawnX() { return lastDrawnX; }
 int Ball::getLastDrawnY() { return lastDrawnY; }
-void Ball::move(Board& board, bool& del) {
+void Ball::move(Board& board, bool& delete_ball) {
     x = x + x_speed;
     y = y + y_speed;
-    del = false;
+    delete_ball = false;
     if (y-radius <= board.getMinHeight()) {
         board.incrementScore2();
-        del = true;
+        delete_ball = true;
     } else if (y+radius >= board.getMaxHeight()) {
         board.incrementScore1();
-        del = true;
+        delete_ball = true;
     } else if (x-radius <= board.getMinWidth()) {
         x_speed = abs(x_speed);
         x = abs(x-board.getMinWidth()) + board.getMinWidth();
@@ -387,7 +387,7 @@ void stateGame() {
         game_ticker.attach(&TickerISR, TICKERTIME);
         prev_state = curr_state;
     }
-    
+
     // Draw the scoreboard
     LCD.SetTextColor(LCD_COLOR_WHITE);
     LCD.FillRect(board.getMaxWidth()-board.getMinWidth(), 0, board.getMaxWidth()-board.getMinWidth(), board.getMinHeight());

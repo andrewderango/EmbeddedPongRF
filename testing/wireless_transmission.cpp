@@ -33,9 +33,6 @@ void print_diagnostic_info() {
     printf("[TX Board] Frequency    : %d MHz\n", transmitter.getRfFrequency());
     printf("[TX Board] Output power : %d dBm\n", transmitter.getRfOutputPower());
     printf("[TX Board] Data rate    : %d kbps\n", transmitter.getAirDataRate());
-    printf("[TX Board] Frequency    : %d MHz\n", transmitter.getRfFrequency());
-    printf("[TX Board] Output power : %d dBm\n", transmitter.getRfOutputPower());
-    printf("[TX Board] Data rate    : %d kbps\n", transmitter.getAirDataRate());
     printf("[TX Board] TX Address   : 0x%llx\n", transmitter.getTxAddress());
     printf("[TX Board] RX Address   : 0x%llx\n", transmitter.getRxAddress());
 }
