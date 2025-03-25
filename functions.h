@@ -88,9 +88,7 @@ public:
     void draw();
     void moveRight();
     void moveLeft();
-    void moveTo(int new_x) {
-        x = max(board.getMinWidth(), min(new_x, board.getMaxWidth() - width));
-    }
+    void moveTo(int new_x);
 };
 
 // Interrupt Service Routines

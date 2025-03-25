@@ -58,8 +58,8 @@ bool spawn_ball_flag = false;
 Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
     rngInit();
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), max_height - 10, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min-width)) / 2), min_height + 5, *this);
+    paddles.emplace_back((int)((float)(max_width-min-width) / 2 - (0.15 * (max_width-min-width)) / 2), max_height - 10, *this);
     score1 = 0;
     score2 = 0;
 }
@@ -91,7 +91,7 @@ void Board::moveBalls() {
         }
     }
     if (balls.size() <= 0) {
-        balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+        balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min-height)/2);
     }
     
     // AI opponent
@@ -109,7 +109,7 @@ void Board::moveBalls() {
 }
 void Board::spawnBall() {
     if (balls.size() < maxNumOfBalls) {
-        balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+        balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max-height-min-height)/2);
     }
 }
 bool Board::getWireless() {
@@ -176,9 +176,9 @@ int Board::getScore2() const { return score2; }
 
 void Board::resetGame() {
     balls.clear();
-    balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
+    balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max-height-min-height)/2);
     paddles.clear();
-    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
+    paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max-width-min-width)) / 2), min_height + 5, *this);
     score1 = 0;
     score2 = 0;
 }
@@ -293,6 +293,9 @@ void Paddle::moveLeft() {
         x = x - 0.25*width;
         x = max(board.getMinWidth(), x);
     }
+}
+void Paddle::moveTo(int new_x) {
+    x = max(board.getMinWidth(), min(new_x, board.getMaxWidth() - width));
 }
 
 Board board(0, 20, 240, 320);
