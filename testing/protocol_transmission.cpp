@@ -1,14 +1,13 @@
 #include "mbed.h"
 #include "nRF24L01P.h"
 #include <vector>
-
 #define TRANSFER_SIZE 30
 
-// transmitter: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
-// receiver: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+// transmitter: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+// receiver: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
 
 // mosi, miso, sck, nsc, ce, irq
-nRF24L01P transmitter(PE_14, PE_13, PE_12, PE_11, PE_9);
+nRF24L01P transmitter(PE_14, PE_13, PE_12, PE_11, PE_9, NC);
 
 void print_diagnostic_info();
 void transmit_game_state(uint8_t num_balls, const std::vector<std::pair<int, int>>& ball_positions, int paddle1_pos, int paddle2_pos, int score1, int score2);
@@ -54,10 +53,10 @@ void transmit_game_state(uint8_t num_balls, const std::vector<std::pair<int, int
     message[27] = score1 & 0xFF;
     message[28] = score2 & 0xFF;
 
-    message[29] = 2; // Game state: 0 = Menu, 1 = Pause, 2 = Game
+    message[29] = 2;
 
     int bits_written = transmitter.write(NRF24L01P_PIPE_P0, message, TRANSFER_SIZE);
-    printf("bits written: %d\n", bits_written);
+    // printf("bits written: %d\n", bits_written);
     printf("[TX Board] Transmitting \"");
     for (int i = 0; i < TRANSFER_SIZE; ++i) {
         printf("%02X ", message[i]);
