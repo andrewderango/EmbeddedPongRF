@@ -117,28 +117,30 @@ bool Board::getWireless() {
 }
 int Board::transmitBoardState(bool verbose) {
     // pull data from board object
-    uint8_t num_balls = balls.size();
-    std::vector<std::pair<int, int>> ball_positions;
-    for (int i = 0; i < num_balls; i++) {
-        ball_positions.push_back(std::make_pair(balls[i].getx(), balls[i].gety()));
-    }
-    int paddle1_pos = paddles[0].getLeft();
-    int paddle2_pos = paddles[1].getLeft();
-
-    // format the data under defined protocol
     char message[TRANSFER_SIZE] = {0};
-    message[0] = num_balls;
-    for (size_t i = 0; i < ball_positions.size() && i < 8; ++i) {
-        int x = ball_positions[i].first;
-        int y = ball_positions[i].second;
-        message[1 + i * 3] = x & 0xFF;
-        message[2 + i * 3] = y & 0xFF;
-        message[3 + i * 3] = (y >> 8) & 0xFF;
+    if (curr_state == STATE_GAME) {
+        uint8_t num_balls = balls.size();
+        std::vector<std::pair<int, int>> ball_positions;
+        for (int i = 0; i < num_balls; i++) {
+            ball_positions.push_back(std::make_pair(balls[i].getx(), balls[i].gety()));
+        }
+        int paddle1_pos = paddles[0].getLeft();
+        int paddle2_pos = paddles[1].getLeft();
+
+        // format the data under defined protocol
+        message[0] = num_balls;
+        for (size_t i = 0; i < ball_positions.size() && i < 8; ++i) {
+            int x = ball_positions[i].first;
+            int y = ball_positions[i].second;
+            message[1 + i * 3] = x & 0xFF;
+            message[2 + i * 3] = y & 0xFF;
+            message[3 + i * 3] = (y >> 8) & 0xFF;
+        }
+        message[25] = paddle1_pos & 0xFF;
+        message[26] = paddle2_pos & 0xFF;
+        message[27] = this->score1 & 0xFF;
+        message[28] = this->score2 & 0xFF;
     }
-    message[25] = paddle1_pos & 0xFF;
-    message[26] = paddle2_pos & 0xFF;
-    message[27] = this->score1 & 0xFF;
-    message[28] = this->score2 & 0xFF;
     message[29] = curr_state;
 
     // transmit the data
@@ -407,6 +409,11 @@ void stateMenu() {
         LCD.DisplayStringAt(0, 170, (uint8_t *)"3 - Human vs Human (Wireless)", CENTER_MODE);
         prev_state = curr_state;
     }
+
+    // Transmit board state
+    if (board.getWireless()) {
+        board.transmitBoardState(true);
+    }
 }
 
 void statePause() {
@@ -424,6 +431,11 @@ void statePause() {
         LCD.DisplayStringAt(0, 120, (uint8_t *)"Press OBB to Quit", CENTER_MODE);
         LCD.SetBackColor(LCD_COLOR_WHITE);
         game_ticker.detach();
+    }
+
+    // Transmit board state
+    if (board.getWireless()) {
+        board.transmitBoardState(true);
     }
 }
 
@@ -446,7 +458,7 @@ void stateGame() {
     sprintf(score_str, "(P1) %d - %d (P2)", score1, score2);
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
-    // Transmit game state
+    // Transmit board state
     if (board.getWireless()) {
         board.transmitBoardState(true);
     }
