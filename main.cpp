@@ -156,7 +156,19 @@ int Board::transmitBoardState(bool verbose) {
 
     return bits_written;
 }
+int Board::processIncomingMessage() {
+    if (master.readable()) {
+        char slave_message[1] = {0};
+        int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
+        if (bits_read > 0) {
+            int slave_paddle_pos = slave_message[0] & 0xFF;
+            paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+        }
+        return bits_read;
+    }
 
+    return 0;
+}
 void Board::incrementScore1() { score1++; }
 void Board::incrementScore2() { score2++; }
 int Board::getScore1() const { return score1; }
@@ -231,11 +243,11 @@ void Ball::move(Board& board, bool& delete_ball) {
     if (y-radius <= board.paddles[0].getBottom() && x <= board.paddles[0].getRight() && x >= board.paddles[0].getLeft()) {
         y_speed = abs(y_speed)*randBetween(1, 1.05);
         x_speed = x_speed*randBetween(1, 1.05);
-        if (abs(x_speed) < 0.5) {x_speed+=randBetween(-0.5, 0.5);}
+        if (abs(x_speed) < 0.5) { x_speed+=randBetween(-0.5, 0.5); }
     } else if (y+radius >= board.paddles[1].getTop() && x <= board.paddles[1].getRight() && x >= board.paddles[1].getLeft()) {
         y_speed = -abs(y_speed)*randBetween(1, 1.05);
         x_speed = x_speed*randBetween(1, 1.05);
-        if (abs(x_speed) < 0.5) {x_speed+=randBetween(-0.5, 0.5);}
+        if (abs(x_speed) < 0.5) { x_speed+=randBetween(-0.5, 0.5); }
     }
 }
 
@@ -454,9 +466,10 @@ void stateGame() {
     sprintf(score_str, "(P1) %d - %d (P2)", score1, score2);
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
-    // Transmit board state
+    // Transmit board state and process incoming message
     if (board.getWireless()) {
         board.transmitBoardState(true);
+        board.processIncomingMessage();
     }
 
     // Draw the board and paddles
