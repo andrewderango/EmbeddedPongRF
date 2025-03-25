@@ -6,23 +6,23 @@
 // receiver: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
 
 // mosi, miso, sck, nsc, ce, irq
-nRF24L01P transmitter(PE_14, PE_13, PE_12, PE_11, PE_9, NC);
+nRF24L01P receiver(PE_14, PE_13, PE_12, PE_11, PE_9, NC);
 
 void print_diagnostic_info();
 
 int main() {
     char rxData[TRANSFER_SIZE];
     int rxDataCount;
-    transmitter.powerUp();
+    receiver.powerUp();
     printf("[RX Board]\n");
     print_diagnostic_info();
-    transmitter.setTransferSize(TRANSFER_SIZE);
-    transmitter.setReceiveMode();
-    transmitter.enable();
+    receiver.setTransferSize(TRANSFER_SIZE);
+    receiver.setReceiveMode();
+    receiver.enable();
 
     while (true) {
-        if (transmitter.readable()) {
-            rxDataCount = transmitter.read(NRF24L01P_PIPE_P0, rxData, sizeof(rxData));
+        if (receiver.readable()) {
+            rxDataCount = receiver.read(NRF24L01P_PIPE_P0, rxData, sizeof(rxData));
             // printf("Data Count: %d\n", rxDataCount);
             // interpret the rxData
             uint8_t num_balls = rxData[0];
@@ -47,9 +47,9 @@ int main() {
 }
 
 void print_diagnostic_info() {
-    printf("[RX Board] Frequency    : %d MHz\n", transmitter.getRfFrequency());
-    printf("[RX Board] Output power : %d dBm\n", transmitter.getRfOutputPower());
-    printf("[RX Board] Data rate    : %d kbps\n", transmitter.getAirDataRate());
-    printf("[RX Board] TX Address   : 0x%08X\n", transmitter.getTxAddress());
-    printf("[RX Board] RX Address   : 0x%08X\n", transmitter.getRxAddress());
+    printf("[RX Board] Frequency    : %d MHz\n", receiver.getRfFrequency());
+    printf("[RX Board] Output power : %d dBm\n", receiver.getRfOutputPower());
+    printf("[RX Board] Data rate    : %d kbps\n", receiver.getAirDataRate());
+    printf("[RX Board] TX Address   : 0x%08X\n", receiver.getTxAddress());
+    printf("[RX Board] RX Address   : 0x%08X\n", receiver.getRxAddress());
 }

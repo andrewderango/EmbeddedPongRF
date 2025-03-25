@@ -19,7 +19,7 @@ int main() {
     printf("[TX Board]\n");
     print_diagnostic_info();
     transmitter.setTransferSize(TRANSFER_SIZE);
-    transmitter.setTransmitMode();
+    transmitter.setReceiveMode();
     transmitter.enable();
 
     while (true) {
