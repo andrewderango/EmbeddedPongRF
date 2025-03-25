@@ -12,6 +12,8 @@
 #define RNG_SR         (*(volatile uint32_t *)(RNG_BASE + 0x04))    // RNG Status register
 #define RNG_DR         (*(volatile uint32_t *)(RNG_BASE + 0x08))    // RNG Data register
 
+#define MASTER 1 // 1 for master, 0 for slave
+
 #define SDA_PIN PC_9
 #define SCL_PIN PA_8
 #define TICKERTIME 20ms
@@ -19,8 +21,8 @@
 #define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
 
-// transmitter: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
-// receiver: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+// transmitter: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+// receiver: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
 
 // DEVICES --------------------------------
 
@@ -42,12 +44,12 @@ typedef enum {
     STATE_MENU = 0,
     STATE_PAUSE = 1,
     STATE_GAME = 2,
-} State_Type;
+} StateType;
 
 // GLOBAL VARS ----------------------------
 
-static State_Type curr_state;
-static State_Type prev_state = STATE_GAME;
+static StateType curr_state;
+static StateType prev_state = STATE_GAME;
 bool spawn_ball_flag = false;
 
 // OBJECTS --------------------------------
@@ -55,7 +57,7 @@ bool spawn_ball_flag = false;
         
 // Constructor
 Board::Board(int min_width, int min_height, int max_width, int max_height) : min_width(min_width), min_height(min_height), max_width(max_width), max_height(max_height) {
-    rng_init();
+    rngInit();
     balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), min_height + 5, *this);
     paddles.emplace_back((int)((float)(max_width-min_width) / 2 - (0.15 * (max_width-min_width)) / 2), max_height - 10, *this);
@@ -79,6 +81,8 @@ void Board::moveBalls() {
     for (int i = 0; i < balls.size(); i++) {
         bool delete_ball = false;
         balls[i].move(*this, delete_ball);
+
+        // somehow changing the LCD in an ISR???
         if (delete_ball) {
             LCD.SetTextColor(LCD_COLOR_BLACK);
             LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
@@ -193,6 +197,7 @@ void Ball::move(Board& board, bool& delete_ball) {
         if (abs(x_speed) < 0.5) {x_speed+=randBetween(-0.5, 0.5);}
     }
 }
+
 // PADDLE OBJECT METHODS
 
 Paddle::Paddle(int x, int y, Board& board) : x(x), y(y), board(board) {
@@ -319,13 +324,13 @@ void initializeSM() {
 
 // HELPER FUNCTIONS ------------------------
 
-void rng_init() {
+void rngInit() {
     RCC_AHB2ENR |= RCC_AHB2ENR_RNGEN;   // Enables RNG clock
     wait_us(100);                       // Small delay to ensure clock stablity
     RNG_CR |= RNG_CR_RNGEN;             // Enables RNG peripheral
 }
 
-uint32_t rng_get_random_number() {
+uint32_t rngGetRandomNumber() {
     while (!(RNG_SR & RNG_SR_DRDY)) { }         // Wait for a new random number to be avaliable
     if (RNG_SR & (RNG_SR_SEIS | RNG_SR_CEIS)) { // If there is a seed or clock error it turns the RNG off and back on
         RNG_CR &= ~RNG_CR_RNGEN;
@@ -336,7 +341,7 @@ uint32_t rng_get_random_number() {
 }
 
 float randBetween(float min, float max) {
-    return ((float)(rng_get_random_number() % 1000000))/1000000.0 * (max-min)+min;
+    return ((float)(rngGetRandomNumber() % 1000000))/1000000.0 * (max-min)+min;
 }
 
 float min(float a, float b) {
@@ -403,8 +408,6 @@ void stateGame() {
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
     // Draw the board and paddles
-    // LCD.SetTextColor(LCD_COLOR_BLACK);
-    // LCD.FillRect(board.getMinWidth(), board.getMinHeight(), board.getMaxWidth()-board.getMinWidth(), board.getMaxHeight()-board.getMinHeight());
     if (spawn_ball_flag) {
         board.spawnBall();
         spawn_ball_flag = false;
