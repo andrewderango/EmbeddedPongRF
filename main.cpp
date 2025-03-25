@@ -288,7 +288,6 @@ void Board::setAI2Enabled(bool enabled) {
 
 void Board::setWireless(bool enabled) {
     wireless = enabled;
-    if (wireless) { initializeRF(); }
 }
 
 // BALL OBJECT METHODS
@@ -592,6 +591,7 @@ void stateGame() {
     if (prev_state != curr_state) {
         LCD.Clear(LCD_COLOR_BLACK);
         if (MASTER) { game_ticker.attach(&TickerISR, TICKERTIME); }
+        if (board.getWireless()) { initializeRF(); }
         prev_state = curr_state;
     }
 
