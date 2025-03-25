@@ -44,7 +44,9 @@ public:
     std::vector<Paddle> paddles;
     bool getWireless();
     int transmitBoardState(bool verbose);
-    int processIncomingMessage(bool verbose);
+    int processIncomingSlaveMessage(bool verbose);
+    int processIncomingMasterMessage(bool verbose);
+    int transmitOutboundSlaveMessage(bool verbose);
 };
 
 // Ball Class

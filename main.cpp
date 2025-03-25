@@ -27,7 +27,7 @@
 
 LCD_DISCO_F429ZI LCD;
 nRF24L01P master(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
-// nRF24L01P slave(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
+nRF24L01P slave(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
 DigitalOut red_led(PG_13);
 DigitalOut green_led(PG_14);
 Ticker game_ticker;
@@ -159,7 +159,7 @@ int Board::transmitBoardState(bool verbose) {
 
     return bits_written;
 }
-int Board::processIncomingMessage(bool verbose) {
+int Board::processIncomingSlaveMessage(bool verbose) {
     if (master.readable()) {
         master.setTransferSize(SLAVE_TRANSFER_SIZE);
         char slave_message[1] = {0};
@@ -179,6 +179,88 @@ int Board::processIncomingMessage(bool verbose) {
     }
 
     return 0;
+}
+int Board::processIncomingMasterMessage(bool verbose) {
+    if (slave.readable()) {
+        slave.setTransferSize(MASTER_TRANSFER_SIZE);
+        char master_message[MASTER_TRANSFER_SIZE] = {0};
+        int bits_read = master.read(NRF24L01P_PIPE_P0, master_message, MASTER_TRANSFER_SIZE);
+
+        if (verbose) {
+            printf("[Master] %d || ", bits_read);
+            for (int i = 0; i < MASTER_TRANSFER_SIZE; ++i) {
+                printf("%02X ", master_message[i]);
+            }
+            printf("\n");
+        }
+
+        if (bits_read > 0) {
+            if (master_message[29] == 2) {
+                curr_state = STATE_GAME;
+
+                // parse the received data
+                uint8_t num_balls = master_message[0];
+                std::vector<std::pair<int, int>> ball_positions;
+                for (int i = 0; i < num_balls; i++) {
+                    int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
+                    int y = (master_message[3 + i * 3] & 0xFF);
+                    ball_positions.push_back(std::make_pair(x, y));
+                }
+                int paddle1_pos = master_message[25];
+                int paddle2_pos = master_message[26];
+                int score1 = master_message[27];
+                int score2 = master_message[28];
+                
+                // update the board object with the received data
+                balls.clear();
+                for (int i = 0; i < num_balls; i++) {
+                    balls.emplace_back(ball_positions[i].first, ball_positions[i].second);
+                }
+                paddles[0].moveTo(paddle1_pos);
+                paddles[1].moveTo(paddle2_pos);
+                this->score1 = score1;
+                this->score2 = score2;
+
+                // update the balls on the screen
+                for (int i = 0; i < balls.size(); i++) {
+                    bool delete_ball = false;
+                    balls[i].move(*this, delete_ball);
+            
+                    if (delete_ball) {
+                        LCD.SetTextColor(LCD_COLOR_BLACK);
+                        LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
+                        // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
+                        balls.erase(balls.begin() + i);
+                        i--;
+                    }
+                }
+
+            } else if (master_message[29] == 1) {
+                curr_state = STATE_PAUSE;
+            } else if (master_message[29] == 0) {
+                curr_state = STATE_MENU;
+            }
+        }
+
+        return bits_read;
+    }
+    return 0;
+}
+int Board::transmitOutboundSlaveMessage(bool verbose) {
+    slave.setTransferSize(SLAVE_TRANSFER_SIZE);
+    char message[1] = {0};
+    message[0] = paddles[1].getLeft() & 0xFF;
+    int bits_written = slave.write(NRF24L01P_PIPE_P0, message, SLAVE_TRANSFER_SIZE);
+
+    if (verbose) {
+        printf("[Slave] %d || ", bits_written);
+        for (int i = 0; i < SLAVE_TRANSFER_SIZE; ++i) {
+            printf("%02X ", message[i]);
+        }
+        printf("\n");
+    }
+
+    return bits_written;
 }
 void Board::incrementScore1() { score1++; }
 void Board::incrementScore2() { score2++; }
@@ -204,6 +286,7 @@ void Board::setAI2Enabled(bool enabled) {
 
 void Board::setWireless(bool enabled) {
     wireless = enabled;
+    if (wireless) { initializeRF() };
 }
 
 // BALL OBJECT METHODS
@@ -315,17 +398,19 @@ Board board(0, 20, 240, 320);
 
 void OnboardButtonISR() {
     
-    if (curr_state == STATE_GAME) {
-        spawn_ball_flag = true;
-    } else if (curr_state == STATE_PAUSE) {
-        board.resetGame();
-        board.setWireless(false);
-        curr_state = STATE_MENU;
-    } else if (curr_state == STATE_MENU) {
-        board.setAI1Enabled(true);
-        board.setAI2Enabled(true);
-        board.setWireless(true); // this is just for testing! remove this!
-        curr_state = STATE_GAME;
+    if (MASTER) {
+        if (curr_state == STATE_GAME) {
+            spawn_ball_flag = true;
+        } else if (curr_state == STATE_PAUSE) {
+            board.resetGame();
+            board.setWireless(false);
+            curr_state = STATE_MENU;
+        } else if (curr_state == STATE_MENU) {
+            board.setAI1Enabled(true);
+            board.setAI2Enabled(true);
+            board.setWireless(true); // this is just for testing! turn to false in prod!!!
+            curr_state = STATE_GAME;
+        }
     }
 
     // // simple test functionality
@@ -341,36 +426,44 @@ void OnboardButtonISR() {
 
 void ExternalButton1ISR() {
     if (curr_state == STATE_GAME) {
-        board.paddles[0].moveLeft();
+        if (MASTER) { board.paddles[0].moveLeft(); }
+        else { board.paddles[1].moveLeft(); }
     } else if (curr_state == STATE_MENU) {
-        board.setAI1Enabled(false);
-        board.setAI2Enabled(true);
-        board.setWireless(false);
-        curr_state = STATE_GAME;
+        if (MASTER) {
+            board.setAI1Enabled(false);
+            board.setAI2Enabled(true);
+            board.setWireless(false);
+            curr_state = STATE_GAME;
+        }
     }
 }
 
 void ExternalButton2ISR() {
-    if (curr_state == STATE_GAME) {
-        curr_state = STATE_PAUSE;
-    } else if (curr_state == STATE_PAUSE) {
-        curr_state = STATE_GAME;
-    } else if (curr_state == STATE_MENU) {
-        board.setAI1Enabled(false);
-        board.setAI2Enabled(false);
-        board.setWireless(false);
-        curr_state = STATE_GAME;
+    if (MASTER) {
+        if (curr_state == STATE_GAME) {
+            curr_state = STATE_PAUSE;
+        } else if (curr_state == STATE_PAUSE) {
+            curr_state = STATE_GAME;
+        } else if (curr_state == STATE_MENU) {
+            board.setAI1Enabled(false);
+            board.setAI2Enabled(false);
+            board.setWireless(false);
+            curr_state = STATE_GAME;
+        }
     }
 }
 
 void ExternalButton3ISR() {
     if (curr_state == STATE_GAME) {
-        board.paddles[0].moveRight();
+        if (MASTER) { board.paddles[0].moveRight(); }
+        else { board.paddles[1].moveRight(); }
     } else if (curr_state == STATE_MENU) {
+        if (MASTER) {
         board.setAI1Enabled(false);
         board.setAI2Enabled(false);
         board.setWireless(true);
         curr_state = STATE_GAME;
+        }
     }
 }
 
@@ -391,9 +484,16 @@ void initializeSM() {
 }
 
 void initializeRF() {
-    master.powerUp();
-    master.setReceiveMode();
-    master.enable();
+    if (MASTER) {
+        master.powerUp();
+        master.setReceiveMode();
+        master.enable();
+    } else {
+        slave.powerUp();
+        slave.setReceiveMode();
+        slave.enable();
+    }
+    logRfDiagnostics();
 }
 
 // HELPER FUNCTIONS ------------------------
@@ -449,6 +549,16 @@ void stateMenu() {
         LCD.DisplayStringAt(0, 150, (uint8_t *)"2 - Human vs Human (Local)", CENTER_MODE);
         LCD.DisplayStringAt(0, 170, (uint8_t *)"3 - Human vs Human (Wireless)", CENTER_MODE);
         prev_state = curr_state;
+
+        if (!MASTER) {
+            board.setAI1Enabled(true);
+            board.setAI2Enabled(true);
+            board.setWireless(true);
+        }
+    }
+
+    if (!MASTER) {
+        board.processIncomingMasterMessage(true);
     }
 }
 
@@ -469,8 +579,9 @@ void statePause() {
         game_ticker.detach();
     }
 
-    // Transmit board state
-    if (board.getWireless()) {
+    if (!MASTER) {
+        board.processIncomingMasterMessage(true);
+    } else if (board.getWireless()) {
         board.transmitBoardState(true);
     }
 }
@@ -478,8 +589,13 @@ void statePause() {
 void stateGame() {
     if (prev_state != curr_state) {
         LCD.Clear(LCD_COLOR_BLACK);
-        game_ticker.attach(&TickerISR, TICKERTIME);
+        if (MASTER) { game_ticker.attach(&TickerISR, TICKERTIME); }
         prev_state = curr_state;
+    }
+
+    if (!MASTER) {
+        board.processIncomingMasterMessage(true);
+        board.transmitOutboundSlaveMessage(true);
     }
 
     // Draw the scoreboard
@@ -495,9 +611,9 @@ void stateGame() {
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
     // Transmit board state and process incoming message
-    if (board.getWireless()) {
+    if (MASTER && board.getWireless()) {
         board.transmitBoardState(true);
-        board.processIncomingMessage(true);
+        board.processIncomingSlaveMessage(true);
     }
 
     // Draw the board and paddles
@@ -518,7 +634,6 @@ int main() {
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
     external_button3.attach(&ExternalButton3ISR, IRQ_FALL, 50, false);
     initializeSM();
-    initializeRF();
     while (1) {
         state_table[curr_state]();
         ThisThread::sleep_for(20ms);
