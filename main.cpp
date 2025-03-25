@@ -293,6 +293,7 @@ void OnboardButtonISR() {
         spawn_ball_flag = true;
     } else if (curr_state == STATE_PAUSE) {
         board.resetGame();
+        board.setWireless(false);
         curr_state = STATE_MENU;
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(true);
@@ -408,11 +409,6 @@ void stateMenu() {
         LCD.DisplayStringAt(0, 150, (uint8_t *)"2 - Human vs Human (Local)", CENTER_MODE);
         LCD.DisplayStringAt(0, 170, (uint8_t *)"3 - Human vs Human (Wireless)", CENTER_MODE);
         prev_state = curr_state;
-    }
-
-    // Transmit board state
-    if (board.getWireless()) {
-        board.transmitBoardState(true);
     }
 }
 
