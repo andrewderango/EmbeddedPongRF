@@ -14,7 +14,8 @@
 #define RNG_DR         (*(volatile uint32_t *)(RNG_BASE + 0x08))    // RNG Data register
 
 #define MASTER 1 // 1 for master, 0 for slave
-#define TRANSFER_SIZE 30 // 30 byte RF payload
+#define MASTER_TRANSFER_SIZE 30 // 30 byte RF payload
+#define SLAVE_TRANSFER_SIZE 1 // 1 byte RF payload
 #define TICKERTIME 20ms
 #define AI1_DIFFICULTY 1 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 3 // 0 is easy, 10 is hard (bottom paddle)
@@ -118,7 +119,8 @@ bool Board::getWireless() {
 }
 int Board::transmitBoardState(bool verbose) {
     // pull data from board object
-    char message[TRANSFER_SIZE] = {0};
+    master.setTransferSize(SLAVE_TRANSFER_SIZE);
+    char message[MASTER_TRANSFER_SIZE] = {0};
     if (curr_state == STATE_GAME) {
         uint8_t num_balls = balls.size();
         std::vector<std::pair<int, int>> ball_positions;
@@ -145,11 +147,11 @@ int Board::transmitBoardState(bool verbose) {
     message[29] = curr_state;
 
     // transmit the data
-    int bits_written = master.write(NRF24L01P_PIPE_P0, message, TRANSFER_SIZE);
+    int bits_written = master.write(NRF24L01P_PIPE_P0, message, MASTER_TRANSFER_SIZE);
 
     if (verbose) {
         printf("[Master] %d || ", bits_written);
-        for (int i = 0; i < TRANSFER_SIZE; ++i) {
+        for (int i = 0; i < MASTER_TRANSFER_SIZE; ++i) {
             printf("%02X ", message[i]);
         }
         printf("\n");
@@ -159,6 +161,7 @@ int Board::transmitBoardState(bool verbose) {
 }
 int Board::processIncomingMessage(bool verbose) {
     if (master.readable()) {
+        master.setTransferSize(SLAVE_TRANSFER_SIZE);
         char slave_message[1] = {0};
         int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
         if (bits_read > 0) {
@@ -387,6 +390,12 @@ void initializeSM() {
     curr_state = STATE_MENU;
 }
 
+void initializeRF() {
+    master.powerUp();
+    master.setReceiveMode();
+    master.enable();
+}
+
 // HELPER FUNCTIONS ------------------------
 
 float min(float a, float b) {
@@ -509,6 +518,7 @@ int main() {
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
     external_button3.attach(&ExternalButton3ISR, IRQ_FALL, 50, false);
     initializeSM();
+    initializeRF();
     while (1) {
         state_table[curr_state]();
         ThisThread::sleep_for(20ms);
