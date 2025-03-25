@@ -16,8 +16,8 @@
 #define MASTER 1 // 1 for master, 0 for slave
 #define TRANSFER_SIZE 30 // 30 byte RF payload
 #define TICKERTIME 20ms
-#define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
-#define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
+#define AI1_DIFFICULTY 1 // 0 is easy, 10 is hard (top paddle)
+#define AI2_DIFFICULTY 3 // 0 is easy, 10 is hard (bottom paddle)
 
 // master: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
 // slave: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
@@ -124,8 +124,6 @@ int Board::transmitBoardState(bool verbose) {
     }
     int paddle1_pos = paddles[0].getLeft();
     int paddle2_pos = paddles[1].getLeft();
-    int score1 = score1;
-    int score2 = score2;
 
     // format the data under defined protocol
     char message[TRANSFER_SIZE] = {0};
@@ -139,8 +137,8 @@ int Board::transmitBoardState(bool verbose) {
     }
     message[25] = paddle1_pos & 0xFF;
     message[26] = paddle2_pos & 0xFF;
-    message[27] = score1 & 0xFF;
-    message[28] = score2 & 0xFF;
+    message[27] = this->score1 & 0xFF;
+    message[28] = this->score2 & 0xFF;
     message[29] = curr_state;
 
     // transmit the data
@@ -151,7 +149,7 @@ int Board::transmitBoardState(bool verbose) {
         for (int i = 0; i < TRANSFER_SIZE; ++i) {
             printf("%02X ", message[i]);
         }
-        printf("\"\n");
+        printf("\n");
     }
 
     return bits_written;
