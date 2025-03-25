@@ -102,6 +102,7 @@ void stateMenu();
 void statePause();
 void stateGame();
 void initializeSM();
+void initializeRF();
 
 // Helper Functions
 float min(float a, float b);
