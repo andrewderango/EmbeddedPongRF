@@ -26,6 +26,7 @@
 
 LCD_DISCO_F429ZI LCD;
 nRF24L01P master(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
+// nRF24L01P slave(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
 DigitalOut red_led(PG_13);
 DigitalOut green_led(PG_14);
 Ticker game_ticker;
@@ -156,13 +157,20 @@ int Board::transmitBoardState(bool verbose) {
 
     return bits_written;
 }
-int Board::processIncomingMessage() {
+int Board::processIncomingMessage(bool verbose) {
     if (master.readable()) {
         char slave_message[1] = {0};
         int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
         if (bits_read > 0) {
             int slave_paddle_pos = slave_message[0] & 0xFF;
             paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+        }
+        if (verbose) {
+            printf("[Slave] %d || ", bits_read);
+            for (int i = 0; i < 1; ++i) {
+                printf("%02X ", slave_message[i]);
+            }
+            printf("\n");
         }
         return bits_read;
     }
@@ -407,6 +415,14 @@ uint32_t rngGetRandomNumber() {
         return 0;
     }
     return RNG_DR;  // Returns the random 32-bit number from the RNG_DR register
+}
+
+void logRfDiagnostics() {
+    printf("[Master] Frequency    : %d MHz\n", master.getRfFrequency());
+    printf("[Master] Output power : %d dBm\n", master.getRfOutputPower());
+    printf("[Master] Data rate    : %d kbps\n", master.getAirDataRate());
+    printf("[Master] TX Address   : 0x%llx\n", master.getTxAddress());
+    printf("[Master] RX Address   : 0x%llx\n", master.getRxAddress());
 }
 
 // STATE FUNCTIONS ---------------------------
