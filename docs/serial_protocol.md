@@ -64,6 +64,24 @@ For example, if there are 2 balls with positions (10, 20) and (30, 40), Paddle 1
 
 This message is then transmitted over the wireless communication channel.
 
+## Slave Message Format
+
+The slave sends a single-byte message indicating the position of its paddle.
+
+| Byte Index | Description                        |
+|------------|------------------------------------|
+| 0          | Position of Paddle 2 (1 byte)     |
+
+### Example Message
+
+If Paddle 2 is at position 60, the message would be:
+
+| Byte Index | Value |
+|------------|-------|
+| 0          | 60    |
+
+This message is transmitted over the wireless communication channel and is processed by the master to update Paddle 2's position.
+
 ## Notes
 
 - All values are transmitted as unsigned integers in little-endian format.

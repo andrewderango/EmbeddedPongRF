@@ -44,6 +44,7 @@ public:
     std::vector<Paddle> paddles;
     bool getWireless();
     int transmitBoardState(bool verbose);
+    void processIncomingMessage();
 };
 
 // Ball Class
@@ -87,6 +88,9 @@ public:
     void draw();
     void moveRight();
     void moveLeft();
+    void moveTo(int new_x) {
+        x = max(board.getMinWidth(), min(new_x, board.getMaxWidth() - width));
+    }
 };
 
 // Interrupt Service Routines
