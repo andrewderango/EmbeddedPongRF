@@ -14,7 +14,7 @@
 #define RNG_DR         (*(volatile uint32_t *)(RNG_BASE + 0x08))    // RNG Data register
 
 #define MASTER 1 // 1 for master, 0 for slave
-#define MASTER_TRANSFER_SIZE 30 // 30 byte RF payload
+#define MASTER_TRANSFER_SIZE 32 // 30 byte RF payload
 #define SLAVE_TRANSFER_SIZE 1 // 1 byte RF payload
 #define TICKERTIME 20ms
 #define AI1_DIFFICULTY 1 // 0 is easy, 10 is hard (top paddle)
@@ -142,9 +142,11 @@ int Board::transmitBoardState(bool verbose) {
         message[25] = paddle1_pos & 0xFF;
         message[26] = paddle2_pos & 0xFF;
         message[27] = this->score1 & 0xFF;
-        message[28] = this->score2 & 0xFF;
+        message[28] = (this->score1 >> 8) & 0xFF;
+        message[29] = this->score2 & 0xFF;
+        message[30] = (this->score2 >> 8) & 0xFF;
     }
-    message[29] = curr_state;
+    message[31] = curr_state;
 
     // transmit the data
     int bits_written = master.write(NRF24L01P_PIPE_P0, message, MASTER_TRANSFER_SIZE);
@@ -195,7 +197,7 @@ int Board::processIncomingMasterMessage(bool verbose) {
         }
 
         if (bits_read > 0) {
-            if (master_message[29] == 2) {
+            if (master_message[31] == 2) {
                 curr_state = STATE_GAME;
 
                 // parse the received data
@@ -208,8 +210,8 @@ int Board::processIncomingMasterMessage(bool verbose) {
                 }
                 int paddle1_pos = master_message[25];
                 int paddle2_pos = master_message[26];
-                int score1 = master_message[27];
-                int score2 = master_message[28];
+                int score1 = (master_message[27] & 0xFF) | ((master_message[28] & 0xFF) << 8);
+                int score2 = (master_message[29] & 0xFF) | ((master_message[30] & 0xFF) << 8);
                 
                 // update the board object with the received data
                 balls.clear();
@@ -235,9 +237,9 @@ int Board::processIncomingMasterMessage(bool verbose) {
                     }
                 }
 
-            } else if (master_message[29] == 1) {
+            } else if (master_message[31] == 1) {
                 curr_state = STATE_PAUSE;
-            } else if (master_message[29] == 0) {
+            } else if (master_message[31] == 0) {
                 curr_state = STATE_MENU;
             }
         }
