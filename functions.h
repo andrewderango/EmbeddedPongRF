@@ -100,10 +100,11 @@ void stateGame();
 void initializeSM();
 
 // Helper Functions
-void rng_init();
-uint32_t rng_get_random_number();
+void rngInit();
+uint32_t rngGetRandomNumber();
 float randBetween(float min, float max);
 float min(float a, float b);
 float max(float a, float b);
+int transmitGameState(bool verbose);
 
 #endif // FUNCTION_H

@@ -1,6 +1,7 @@
 #include "functions.h"
 #include "LCD_DISCO_F429ZI.h"
 #include "DebouncedInterrupt.h"
+#include "nRF24L01P.h"
 #include "mbed.h"
 #include <time.h>
 #include <type_traits>
@@ -13,11 +14,8 @@
 #define RNG_DR         (*(volatile uint32_t *)(RNG_BASE + 0x08))    // RNG Data register
 
 #define MASTER 1 // 1 for master, 0 for slave
-
-#define SDA_PIN PC_9
-#define SCL_PIN PA_8
+#define TRANSFER_SIZE 30 // 30 byte RF payload
 #define TICKERTIME 20ms
-
 #define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
 
@@ -27,6 +25,7 @@
 // DEVICES --------------------------------
 
 LCD_DISCO_F429ZI LCD;
+nRF24L01P master(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
 DigitalOut red_led(PG_13);
 DigitalOut green_led(PG_14);
 Ticker game_ticker;
@@ -161,7 +160,6 @@ void Ball::draw() {
     lastDrawnX = round(x);
     lastDrawnY = round(y);
     LCD.FillCircle(lastDrawnX, lastDrawnY, radius);
-    printf("%d, %d\n", (int)(100*x_speed), (int)(100*y_speed));
 }
 float Ball::getx() { return x; }
 float Ball::gety() { return y; }
@@ -324,6 +322,18 @@ void initializeSM() {
 
 // HELPER FUNCTIONS ------------------------
 
+float min(float a, float b) {
+    return a > b ? b : a;
+}
+
+float max(float a, float b) {
+    return a < b ? b : a;
+}
+
+float randBetween(float min, float max) {
+    return ((float)(rngGetRandomNumber() % 1000000))/1000000.0 * (max-min)+min;
+}
+
 void rngInit() {
     RCC_AHB2ENR |= RCC_AHB2ENR_RNGEN;   // Enables RNG clock
     wait_us(100);                       // Small delay to ensure clock stablity
@@ -340,16 +350,44 @@ uint32_t rngGetRandomNumber() {
     return RNG_DR;  // Returns the random 32-bit number from the RNG_DR register
 }
 
-float randBetween(float min, float max) {
-    return ((float)(rngGetRandomNumber() % 1000000))/1000000.0 * (max-min)+min;
-}
+int transmitGameState(bool verbose) {
+    // use the board object to obtain the data for transmission
+    uint8_t num_balls = board.balls.size();
+    std::vector<std::pair<int, int>> ball_positions;
+    for (int i = 0; i < num_balls; i++) {
+        ball_positions.push_back(std::make_pair(board.balls[i].getx(), board.balls[i].gety()));
+    }
+    int paddle1_pos = board.paddles[0].getLeft();
+    int paddle2_pos = board.paddles[1].getLeft();
+    int score1 = board.getScore1();
+    int score2 = board.getScore2();
 
-float min(float a, float b) {
-    return a > b ? b : a;
-}
+    char message[TRANSFER_SIZE] = {0};
+    message[0] = num_balls;
+    for (size_t i = 0; i < ball_positions.size() && i < 8; ++i) {
+        int x = ball_positions[i].first;
+        int y = ball_positions[i].second;
+        message[1 + i * 3] = x & 0xFF;
+        message[2 + i * 3] = y & 0xFF;
+        message[3 + i * 3] = (y >> 8) & 0xFF;
+    }
+    message[25] = paddle1_pos & 0xFF;
+    message[26] = paddle2_pos & 0xFF;
+    message[27] = score1 & 0xFF;
+    message[28] = score2 & 0xFF;
+    message[29] = curr_state;
 
-float max(float a, float b) {
-    return a < b ? b : a;
+    int bits_written = transmitter.write(NRF24L01P_PIPE_P0, message, TRANSFER_SIZE);
+
+    if (verbose) {
+        printf("[Master] %d || ", bits_written);
+        for (int i = 0; i < TRANSFER_SIZE; ++i) {
+            printf("%02X ", message[i]);
+        }
+        printf("\"\n");
+    }
+
+    return bits_written;
 }
 
 // STATE FUNCTIONS ---------------------------
@@ -406,6 +444,11 @@ void stateGame() {
     int score2 = board.getScore2();
     sprintf(score_str, "(P1) %d - %d (P2)", score1, score2);
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
+
+    // Transmit game state
+    if (wireless) {
+        transmitGameState(true);
+    }
 
     // Draw the board and paddles
     if (spawn_ball_flag) {
