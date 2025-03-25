@@ -19,8 +19,8 @@
 #define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
 
-// transmitter: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
-// receiver: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
+// master: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+// slave: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
 
 // DEVICES --------------------------------
 
@@ -107,11 +107,54 @@ void Board::moveBalls() {
         paddles[1].moveRight();
     }
 }
-
 void Board::spawnBall() {
     if (balls.size() < maxNumOfBalls) {
         balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     }
+}
+bool Board::getWireless() {
+    return wireless;
+}
+int Board::transmitBoardState(bool verbose) {
+    // pull data from board object
+    uint8_t num_balls = balls.size();
+    std::vector<std::pair<int, int>> ball_positions;
+    for (int i = 0; i < num_balls; i++) {
+        ball_positions.push_back(std::make_pair(balls[i].getx(), balls[i].gety()));
+    }
+    int paddle1_pos = paddles[0].getLeft();
+    int paddle2_pos = paddles[1].getLeft();
+    int score1 = score1;
+    int score2 = score2;
+
+    // format the data under defined protocol
+    char message[TRANSFER_SIZE] = {0};
+    message[0] = num_balls;
+    for (size_t i = 0; i < ball_positions.size() && i < 8; ++i) {
+        int x = ball_positions[i].first;
+        int y = ball_positions[i].second;
+        message[1 + i * 3] = x & 0xFF;
+        message[2 + i * 3] = y & 0xFF;
+        message[3 + i * 3] = (y >> 8) & 0xFF;
+    }
+    message[25] = paddle1_pos & 0xFF;
+    message[26] = paddle2_pos & 0xFF;
+    message[27] = score1 & 0xFF;
+    message[28] = score2 & 0xFF;
+    message[29] = curr_state;
+
+    // transmit the data
+    int bits_written = master.write(NRF24L01P_PIPE_P0, message, TRANSFER_SIZE);
+
+    if (verbose) {
+        printf("[Master] %d || ", bits_written);
+        for (int i = 0; i < TRANSFER_SIZE; ++i) {
+            printf("%02X ", message[i]);
+        }
+        printf("\"\n");
+    }
+
+    return bits_written;
 }
 
 void Board::incrementScore1() { score1++; }
@@ -254,7 +297,7 @@ void OnboardButtonISR() {
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(true);
         board.setAI2Enabled(true);
-        board.setWireless(true);
+        board.setWireless(true); // this is just for testing! remove this!
         curr_state = STATE_GAME;
     }
 
@@ -299,7 +342,7 @@ void ExternalButton3ISR() {
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
         board.setAI2Enabled(false);
-        board.setWireless(false);
+        board.setWireless(true);
         curr_state = STATE_GAME;
     }
 }
@@ -348,46 +391,6 @@ uint32_t rngGetRandomNumber() {
         return 0;
     }
     return RNG_DR;  // Returns the random 32-bit number from the RNG_DR register
-}
-
-int transmitGameState(bool verbose) {
-    // use the board object to obtain the data for transmission
-    uint8_t num_balls = board.balls.size();
-    std::vector<std::pair<int, int>> ball_positions;
-    for (int i = 0; i < num_balls; i++) {
-        ball_positions.push_back(std::make_pair(board.balls[i].getx(), board.balls[i].gety()));
-    }
-    int paddle1_pos = board.paddles[0].getLeft();
-    int paddle2_pos = board.paddles[1].getLeft();
-    int score1 = board.getScore1();
-    int score2 = board.getScore2();
-
-    char message[TRANSFER_SIZE] = {0};
-    message[0] = num_balls;
-    for (size_t i = 0; i < ball_positions.size() && i < 8; ++i) {
-        int x = ball_positions[i].first;
-        int y = ball_positions[i].second;
-        message[1 + i * 3] = x & 0xFF;
-        message[2 + i * 3] = y & 0xFF;
-        message[3 + i * 3] = (y >> 8) & 0xFF;
-    }
-    message[25] = paddle1_pos & 0xFF;
-    message[26] = paddle2_pos & 0xFF;
-    message[27] = score1 & 0xFF;
-    message[28] = score2 & 0xFF;
-    message[29] = curr_state;
-
-    int bits_written = transmitter.write(NRF24L01P_PIPE_P0, message, TRANSFER_SIZE);
-
-    if (verbose) {
-        printf("[Master] %d || ", bits_written);
-        for (int i = 0; i < TRANSFER_SIZE; ++i) {
-            printf("%02X ", message[i]);
-        }
-        printf("\"\n");
-    }
-
-    return bits_written;
 }
 
 // STATE FUNCTIONS ---------------------------
@@ -446,8 +449,8 @@ void stateGame() {
     LCD.DisplayStringAt(0, board.getMinHeight()/2-4, (uint8_t *)score_str, CENTER_MODE);
 
     // Transmit game state
-    if (wireless) {
-        transmitGameState(true);
+    if (board.getWireless()) {
+        board.transmitBoardState(true);
     }
 
     // Draw the board and paddles

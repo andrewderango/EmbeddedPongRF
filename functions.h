@@ -17,7 +17,7 @@ private:
     int min_width;
     int max_width;
     std::vector<Ball> balls;
-    int maxNumOfBalls = 6;
+    int maxNumOfBalls = 8;
     int score1;
     int score2;
     bool ai1_enabled;
@@ -42,6 +42,8 @@ public:
     void setAI2Enabled(bool enabled);
     void setWireless(bool enabled);
     std::vector<Paddle> paddles;
+    bool getWireless();
+    int transmitBoardState(bool verbose);
 };
 
 // Ball Class
@@ -105,6 +107,5 @@ uint32_t rngGetRandomNumber();
 float randBetween(float min, float max);
 float min(float a, float b);
 float max(float a, float b);
-int transmitGameState(bool verbose);
 
 #endif // FUNCTION_H
