@@ -286,7 +286,7 @@ void Board::setAI2Enabled(bool enabled) {
 
 void Board::setWireless(bool enabled) {
     wireless = enabled;
-    if (wireless) { initializeRF() };
+    if (wireless) { initializeRF(); }
 }
 
 // BALL OBJECT METHODS
