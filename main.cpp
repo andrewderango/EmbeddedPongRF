@@ -135,6 +135,10 @@ void Board::setAI2Enabled(bool enabled) {
     ai2_enabled = enabled;
 }
 
+bool Board::getAI1Enabled() {
+    return ai1_enabled;
+}
+
 bool Board::getAI2Enabled() {
     return ai2_enabled;
 }
@@ -282,7 +286,7 @@ void OnboardButtonISR() {
 }
 
 void ExternalButton1ISR() {
-    if (curr_state == STATE_GAME) {
+    if (curr_state == STATE_GAME && !board.getAI1Enabled()) {
         board.paddles[0].moveLeft();
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
@@ -306,7 +310,7 @@ void ExternalButton2ISR() {
 }
 
 void ExternalButton3ISR() {
-    if (curr_state == STATE_GAME) {
+    if (curr_state == STATE_GAME && !board.getAI1Enabled()) {
         board.paddles[0].moveRight();
     } else if (curr_state == STATE_MENU) {
         board.setAI1Enabled(false);
