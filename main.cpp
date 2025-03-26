@@ -42,7 +42,6 @@ DebouncedInterrupt external_button3(PA_7);
 DebouncedInterrupt external_button4(PG_3);
 DebouncedInterrupt external_button5(PH_1);
 DebouncedInterrupt external_button6(PG_2);
-Ticker game_ticker;
 
 // DATA TYPES -----------------------------
 
