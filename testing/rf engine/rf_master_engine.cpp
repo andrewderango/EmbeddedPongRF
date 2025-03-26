@@ -117,9 +117,6 @@ void Board::spawnBall() {
         balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     }
 }
-bool Board::getWireless() {
-    return wireless;
-}
 int Board::transmitBoardState(bool verbose) {
     // pull data from board object
     master.setTransferSize(SLAVE_TRANSFER_SIZE);
@@ -165,25 +162,45 @@ int Board::transmitBoardState(bool verbose) {
     return bits_written;
 }
 int Board::processIncomingSlaveMessage(bool verbose) {
-    if (master.readable()) {
-        master.setTransferSize(SLAVE_TRANSFER_SIZE);
-        char slave_message[1] = {0};
-        int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
-        if (bits_read > 0) {
-            int slave_paddle_pos = slave_message[0] & 0xFF;
-            paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
-        }
-        if (verbose) {
-            printf("[Slave] %d || ", bits_read);
-            for (int i = 0; i < 1; ++i) {
-                printf("%02X ", slave_message[i]);
-            }
-            printf("\n");
-        }
-        return bits_read;
-    }
+    // RF engine replacement
+    // if (master.readable()) {
+    //     master.setTransferSize(SLAVE_TRANSFER_SIZE);
+    //     char slave_message[1] = {0};
+    //     int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
+    //     if (bits_read > 0) {
+    //         int slave_paddle_pos = slave_message[0] & 0xFF;
+    //         paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+    //     }
+    //     if (verbose) {
+    //         printf("[Slave] %d || ", bits_read);
+    //         for (int i = 0; i < 1; ++i) {
+    //             printf("%02X ", slave_message[i]);
+    //         }
+    //         printf("\n");
+    //     }
+    //     return bits_read;
+    // }
+    //
+    // return 0;
 
-    return 0;
+    // pick a random number between 0 and 204 for paddle position for RF engine
+    int random_paddle_pos = randBetween(0, 204);
+    char slave_message[1] = {0};
+    slave_message[0] = random_paddle_pos & 0xFF;
+    int bits_read = 1;
+
+    if (bits_read > 0) {
+        int slave_paddle_pos = slave_message[0] & 0xFF;
+        paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+    }
+    if (verbose) {
+        printf("[Slave] %d || ", bits_read);
+        for (int i = 0; i < 1; ++i) {
+            printf("%02X ", slave_message[i]);
+        }
+        printf("\n");
+    }
+    return bits_read;
 }
 int Board::processIncomingMasterMessage(bool verbose) {
     if (slave.readable()) {
@@ -419,8 +436,8 @@ void OnboardButtonISR() {
             curr_state = STATE_MENU;
         } else if (curr_state == STATE_MENU) {
             board.setAI1Enabled(true);
-            board.setAI2Enabled(true);
-            board.setWireless(true); // this is just for testing! turn to false in prod!!!
+            board.setAI2Enabled(false); // this is just for testing! turn to true in prod!!!
+            board.setWireless(true); // this is just for testing! turn to false in prod !!!
             curr_state = STATE_GAME;
         }
     }
@@ -624,7 +641,7 @@ void stateGame() {
     if (prev_state != curr_state) {
         LCD.Clear(LCD_COLOR_BLACK);
         if (MASTER) { game_ticker.attach(&TickerISR, TICKERTIME); }
-        if (board.getWireless()) { initializeRF(); }
+        // if (board.getWireless()) { initializeRF(); } // this is commented out for testing purposes !!!
         prev_state = curr_state;
     }
 
