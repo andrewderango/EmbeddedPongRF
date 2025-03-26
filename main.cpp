@@ -20,8 +20,8 @@
 #define AI1_DIFFICULTY 1 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 3 // 0 is easy, 10 is hard (bottom paddle)
 
-// master: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
-// slave: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
+// master: DISCO-F429ZI - 066CFF545150898367163727 (AV1)
+// slave: DISCO-F429ZI - 066DFF4951775177514867255038 (AV2)
 
 // DEVICES --------------------------------
 
@@ -33,6 +33,8 @@ DigitalOut green_led(PG_14);
 
 // INTERRUPTS -----------------------------
 
+Ticker game_ticker;
+Ticker goal_ticker;
 InterruptIn onboard_button(BUTTON1);
 DebouncedInterrupt external_button1(PA_5);
 DebouncedInterrupt external_button2(PA_6);
@@ -55,6 +57,7 @@ typedef enum {
 static StateType curr_state;
 static StateType prev_state = STATE_GAME;
 bool spawn_ball_flag = false;
+int goal_ticker_counter = 0;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -329,9 +332,13 @@ void Ball::move(Board& board, bool& delete_ball) {
     delete_ball = false;
     if (y-radius <= board.getMinHeight()) {
         board.incrementScore2();
+        goal_ticker_counter = 0;
+        goal_ticker.attach(&GoalTickerCallback, 50ms);
         delete_ball = true;
     } else if (y+radius >= board.getMaxHeight()) {
         board.incrementScore1();
+        goal_ticker_counter = 0;
+        goal_ticker.attach(&GoalTickerCallback, 50ms);
         delete_ball = true;
     } else if (x-radius <= board.getMinWidth()) {
         x_speed = abs(x_speed);
@@ -500,6 +507,23 @@ void ExternalButton6ISR() {
 
 void TickerISR() {
     board.moveBalls();
+}
+
+void GoalTickerCallback() {
+    if (goal_ticker_counter == 0) {
+        red_led = 0;
+        green_led = 1;
+    }
+
+    red_led = !red_led;
+    green_led = !green_led;
+    goal_ticker_counter++;
+
+    if (goal_ticker_counter >= 30) {
+        red_led = 0;
+        green_led = 0;
+        goal_ticker.detach();
+    }
 }
 
 // FSM SET UP ------------------------------
