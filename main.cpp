@@ -204,8 +204,8 @@ int Board::processIncomingMasterMessage(bool verbose) {
                 uint8_t num_balls = master_message[0];
                 std::vector<std::pair<int, int>> ball_positions;
                 for (int i = 0; i < num_balls; i++) {
-                    int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
-                    int y = (master_message[3 + i * 3] & 0xFF);
+                    int x = (master_message[1 + i * 3] & 0xFF);
+                    int y = (master_message[2 + i * 3] & 0xFF) | ((master_message[3 + i * 3] & 0xFF) << 8);
                     ball_positions.push_back(std::make_pair(x, y));
                 }
                 int paddle1_pos = master_message[25];

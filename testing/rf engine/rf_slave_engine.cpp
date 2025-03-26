@@ -207,8 +207,8 @@ int Board::processIncomingMasterMessage(bool verbose) {
     //             uint8_t num_balls = master_message[0];
     //             std::vector<std::pair<int, int>> ball_positions;
     //             for (int i = 0; i < num_balls; i++) {
-    //                 int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
-    //                 int y = (master_message[3 + i * 3] & 0xFF);
+    //                 int x = (master_message[1 + i * 3] & 0xFF);
+    //                 int y = (master_message[2 + i * 3] & 0xFF) | ((master_message[3 + i * 3] & 0xFF) << 8);
     //                 ball_positions.push_back(std::make_pair(x, y));
     //             }
     //             int paddle1_pos = master_message[25];
@@ -252,7 +252,24 @@ int Board::processIncomingMasterMessage(bool verbose) {
     // return 0;
 
     if (rf_comms) {
-        char master_message[MASTER_TRANSFER_SIZE] = {0};
+        char master_message[MASTER_TRANSFER_SIZE] = {
+            0x01, // num of balls
+            0x64, 0x64, 0x00, // ball 1 position
+            0x00, 0x00, 0x00, // ball 2 position
+            0x00, 0x00, 0x00, // ball 3 position
+            0x00, 0x00, 0x00, // ball 4 position
+            0x00, 0x00, 0x00, // ball 5 position
+            0x00, 0x00, 0x00, // ball 6 position
+            0x00, 0x00, 0x00, // ball 7 position
+            0x00, 0x00, 0x00, // ball 8 position
+            0x20, // paddle 1 position
+            0x20, // paddle 2 position
+            0x05, 0x00, // score 1
+            // 0x05, 0x00, // score 2
+            static_cast<char>(randBetween(0, 255)), 0x00, // score 2
+            0x02 // state
+        };
+        
         int bits_read = MASTER_TRANSFER_SIZE;
 
         if (verbose) {
@@ -263,53 +280,54 @@ int Board::processIncomingMasterMessage(bool verbose) {
             printf("\n");
         }
 
-        // if (bits_read > 0) {
-        //     if (master_message[31] == 2) {
-        //         curr_state = STATE_GAME;
+        if (bits_read > 0) {
+            if (master_message[31] == 2) {
+                curr_state = STATE_GAME;
 
-        //         // parse the received data
-        //         uint8_t num_balls = master_message[0];
-        //         std::vector<std::pair<int, int>> ball_positions;
-        //         for (int i = 0; i < num_balls; i++) {
-        //             int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
-        //             int y = (master_message[3 + i * 3] & 0xFF);
-        //             ball_positions.push_back(std::make_pair(x, y));
-        //         }
-        //         int paddle1_pos = master_message[25];
-        //         int paddle2_pos = master_message[26];
-        //         int score1 = (master_message[27] & 0xFF) | ((master_message[28] & 0xFF) << 8);
-        //         int score2 = (master_message[29] & 0xFF) | ((master_message[30] & 0xFF) << 8);
+                // parse the received data
+                uint8_t num_balls = master_message[0];
+                std::vector<std::pair<int, int>> ball_positions;
+                for (int i = 0; i < num_balls; i++) {
+                    int x = (master_message[1 + i * 3] & 0xFF);
+                    int y = (master_message[2 + i * 3] & 0xFF) | ((master_message[3 + i * 3] & 0xFF) << 8);
+                    ball_positions.push_back(std::make_pair(x, y));
+                }
+                int paddle1_pos = master_message[25];
+                int paddle2_pos = master_message[26];
+                int score1 = (master_message[27] & 0xFF) | ((master_message[28] & 0xFF) << 8);
+                int score2 = (master_message[29] & 0xFF) | ((master_message[30] & 0xFF) << 8);
                 
-        //         // update the board object with the received data
-        //         balls.clear();
-        //         for (int i = 0; i < num_balls; i++) {
-        //             balls.emplace_back(ball_positions[i].first, ball_positions[i].second);
-        //         }
-        //         paddles[0].moveTo(paddle1_pos);
-        //         paddles[1].moveTo(paddle2_pos);
-        //         this->score1 = score1;
-        //         this->score2 = score2;
+                // update the board object with the received data
+                balls.clear();
+                for (int i = 0; i < num_balls; i++) {
+                    balls.emplace_back(ball_positions[i].first, ball_positions[i].second);
+                }
+                paddles[0].moveTo(paddle1_pos);
+                paddles[1].moveTo(paddle2_pos);
+                this->score1 = score1;
+                this->score2 = score2;
 
-        //         // update the balls on the screen
-        //         for (int i = 0; i < balls.size(); i++) {
-        //             bool delete_ball = false;
-        //             balls[i].move(*this, delete_ball);
+                // update the balls on the screen
+                for (int i = 0; i < balls.size(); i++) {
+                    bool delete_ball = false;
+                    balls[i].move(*this, delete_ball);
             
-        //             if (delete_ball) {
-        //                 LCD.SetTextColor(LCD_COLOR_BLACK);
-        //                 LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
-        //                 // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
-        //                 balls.erase(balls.begin() + i);
-        //                 i--;
-        //             }
-        //         }
+                    if (delete_ball) {
+                        LCD.SetTextColor(LCD_COLOR_BLACK);
+                        LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
+                        // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
+                        balls.erase(balls.begin() + i);
+                        i--;
+                    }
+                }
 
-        //     } else if (master_message[31] == 1) {
-        //         curr_state = STATE_PAUSE;
-        //     } else if (master_message[31] == 0) {
-        //         curr_state = STATE_MENU;
-        //     }
-        // }
+            } else if (master_message[31] == 1) {
+                curr_state = STATE_PAUSE;
+            } else if (master_message[31] == 0) {
+                curr_state = STATE_MENU;
+            }
+        }
+        return bits_read;
     }
     return 0;
 }
