@@ -16,21 +16,19 @@
 #define SCL_PIN PA_8
 #define TICKERTIME 20ms
 
-#define AI1_DIFFICULTY 10 // 0 is easy, 10 is hard (top paddle)
-#define AI2_DIFFICULTY 10 // 0 is easy, 10 is hard (bottom paddle)
-
-// transmitter: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
-// receiver: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+#define AI1_DIFFICULTY 1 // 0 is easy, 10 is hard (top paddle)
+#define AI2_DIFFICULTY 3 // 0 is easy, 10 is hard (bottom paddle)
 
 // DEVICES --------------------------------
 
 LCD_DISCO_F429ZI LCD;
 DigitalOut red_led(PG_13);
 DigitalOut green_led(PG_14);
-Ticker game_ticker;
 
 // INTERRUPTS -----------------------------
 
+Ticker game_ticker;
+Ticker goal_ticker;
 InterruptIn onboard_button(BUTTON1);
 DebouncedInterrupt external_button1(PA_5);
 DebouncedInterrupt external_button2(PA_6);
@@ -45,13 +43,14 @@ typedef enum {
     STATE_MENU = 0,
     STATE_PAUSE = 1,
     STATE_GAME = 2,
-} State_Type;
+} State;
 
 // GLOBAL VARS ----------------------------
 
-static State_Type curr_state;
-static State_Type prev_state = STATE_GAME;
+static State curr_state;
+static State prev_state = STATE_GAME;
 bool spawn_ball_flag = false;
+int goal_ticker_counter = 0;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -180,9 +179,13 @@ void Ball::move(Board& board, bool& delete_ball) {
     delete_ball = false;
     if (y-radius <= board.getMinHeight()) {
         board.incrementScore2();
+        goal_ticker_counter = 0;
+        goal_ticker.attach(&GoalTickerCallback, 50ms);
         delete_ball = true;
     } else if (y+radius >= board.getMaxHeight()) {
         board.incrementScore1();
+        goal_ticker_counter = 0;
+        goal_ticker.attach(&GoalTickerCallback, 50ms);
         delete_ball = true;
     } else if (x-radius <= board.getMinWidth()) {
         x_speed = abs(x_speed);
@@ -337,6 +340,23 @@ void ExternalButton6ISR() {
 
 void TickerISR() {
     board.moveBalls();
+}
+
+void GoalTickerCallback() {
+    if (goal_ticker_counter == 0) {
+        red_led = 0;
+        green_led = 1;
+    }
+
+    red_led = !red_led;
+    green_led = !green_led;
+    goal_ticker_counter++;
+
+    if (goal_ticker_counter >= 30) {
+        red_led = 0;
+        green_led = 0;
+        goal_ticker.detach();
+    }
 }
 
 // FSM SET UP ------------------------------

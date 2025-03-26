@@ -97,6 +97,8 @@ void ExternalButton4ISR();
 void ExternalButton5ISR();
 void ExternalButton6ISR();
 void OnboardButtonISR();
+void TickerISR();
+void GoalTickerCallback();
 
 // State Machine Setup
 void stateMenu();
