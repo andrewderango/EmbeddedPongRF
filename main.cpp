@@ -35,6 +35,9 @@ InterruptIn onboard_button(BUTTON1);
 DebouncedInterrupt external_button1(PA_5);
 DebouncedInterrupt external_button2(PA_6);
 DebouncedInterrupt external_button3(PA_7);
+DebouncedInterrupt external_button4(PG_3);
+DebouncedInterrupt external_button5(PH_1);
+DebouncedInterrupt external_button6(PG_2);
 
 // DATA TYPES -----------------------------
 
@@ -133,8 +136,16 @@ void Board::setAI2Enabled(bool enabled) {
     ai2_enabled = enabled;
 }
 
+bool Board::getAI2Enabled() {
+    return ai2_enabled;
+}
+
 void Board::setWireless(bool enabled) {
     wireless = enabled;
+}
+
+bool Board::getWireless() {
+    return wireless;
 }
 
 // BALL OBJECT METHODS
@@ -193,6 +204,7 @@ void Ball::move(Board& board, bool& delete_ball) {
         if (abs(x_speed) < 0.5) {x_speed+=randBetween(-0.5, 0.5);}
     }
 }
+
 // PADDLE OBJECT METHODS
 
 Paddle::Paddle(int x, int y, Board& board) : x(x), y(y), board(board) {
@@ -298,6 +310,28 @@ void ExternalButton3ISR() {
         board.setAI2Enabled(false);
         board.setWireless(false);
         curr_state = STATE_GAME;
+    }
+}
+
+void ExternalButton4ISR() {
+    if (curr_state == STATE_GAME && !board.getAI2Enabled() && !board.getWireless()) {
+        board.paddles[1].moveLeft();
+    }
+}
+
+void ExternalButton5ISR() {
+    if (!board.getAI2Enabled() && !board.getWireless()) {
+        if (curr_state == STATE_GAME) {
+            curr_state = STATE_PAUSE;
+        } else if (curr_state == STATE_PAUSE) {
+            curr_state = STATE_GAME;
+        }
+    }
+}
+
+void ExternalButton6ISR() {
+    if (curr_state == STATE_GAME && !board.getAI2Enabled() && !board.getWireless()) {
+        board.paddles[1].moveRight();
     }
 }
 
@@ -421,6 +455,9 @@ int main() {
     external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);
     external_button3.attach(&ExternalButton3ISR, IRQ_FALL, 50, false);
+    external_button4.attach(&ExternalButton4ISR, IRQ_FALL, 50, false);
+    external_button5.attach(&ExternalButton5ISR, IRQ_FALL, 50, false);
+    external_button6.attach(&ExternalButton6ISR, IRQ_FALL, 50, false);
     initializeSM();
     while (1) {
         state_table[curr_state]();
