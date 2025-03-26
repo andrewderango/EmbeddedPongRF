@@ -44,7 +44,6 @@ public:
     void setWireless(bool enabled);
     bool getWireless();
     std::vector<Paddle> paddles;
-    bool getWireless();
     int transmitBoardState(bool verbose);
     int processIncomingSlaveMessage(bool verbose);
     int processIncomingMasterMessage(bool verbose);

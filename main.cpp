@@ -117,9 +117,6 @@ void Board::spawnBall() {
         balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     }
 }
-bool Board::getWireless() {
-    return wireless;
-}
 int Board::transmitBoardState(bool verbose) {
     // pull data from board object
     master.setTransferSize(SLAVE_TRANSFER_SIZE);
@@ -171,7 +168,7 @@ int Board::processIncomingSlaveMessage(bool verbose) {
         int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
         if (bits_read > 0) {
             int slave_paddle_pos = slave_message[0] & 0xFF;
-            paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+            paddles[1].moveTo(slave_paddle_pos);
         }
         if (verbose) {
             printf("[Slave] %d || ", bits_read);
@@ -420,7 +417,7 @@ void OnboardButtonISR() {
         } else if (curr_state == STATE_MENU) {
             board.setAI1Enabled(true);
             board.setAI2Enabled(true);
-            board.setWireless(true); // this is just for testing! turn to false in prod!!!
+            board.setWireless(false);
             curr_state = STATE_GAME;
         }
     }
