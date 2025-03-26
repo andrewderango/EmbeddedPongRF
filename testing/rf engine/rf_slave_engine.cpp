@@ -30,7 +30,6 @@ nRF24L01P master(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, 
 nRF24L01P slave(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
 DigitalOut red_led(PG_13);
 DigitalOut green_led(PG_14);
-Ticker game_ticker;
 
 // INTERRUPTS -----------------------------
 
@@ -41,6 +40,8 @@ DebouncedInterrupt external_button3(PA_7);
 DebouncedInterrupt external_button4(PG_3);
 DebouncedInterrupt external_button5(PH_1);
 DebouncedInterrupt external_button6(PG_2);
+Ticker game_ticker;
+Timeout commencement_timeout;
 
 // DATA TYPES -----------------------------
 
@@ -55,6 +56,7 @@ typedef enum {
 static StateType curr_state;
 static StateType prev_state = STATE_GAME;
 bool spawn_ball_flag = false;
+bool rf_comms = false;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -164,7 +166,7 @@ int Board::transmitBoardState(bool verbose) {
 int Board::processIncomingSlaveMessage(bool verbose) {
     if (master.readable()) {
         master.setTransferSize(SLAVE_TRANSFER_SIZE);
-        char slave_message[1] = {0};
+        char slave_message[SLAVE_TRANSFER_SIZE] = {0};
         int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
         if (bits_read > 0) {
             int slave_paddle_pos = slave_message[0] & 0xFF;
@@ -183,10 +185,75 @@ int Board::processIncomingSlaveMessage(bool verbose) {
     return 0;
 }
 int Board::processIncomingMasterMessage(bool verbose) {
-    if (slave.readable()) {
-        slave.setTransferSize(MASTER_TRANSFER_SIZE);
+    // RF engine replacement
+    // if (slave.readable()) {
+    //     slave.setTransferSize(MASTER_TRANSFER_SIZE);
+    //     char master_message[MASTER_TRANSFER_SIZE] = {0};
+    //     int bits_read = master.read(NRF24L01P_PIPE_P0, master_message, MASTER_TRANSFER_SIZE);
+
+    //     if (verbose) {
+    //         printf("[Master] %d || ", bits_read);
+    //         for (int i = 0; i < MASTER_TRANSFER_SIZE; ++i) {
+    //             printf("%02X ", master_message[i]);
+    //         }
+    //         printf("\n");
+    //     }
+
+    //     if (bits_read > 0) {
+    //         if (master_message[31] == 2) {
+    //             curr_state = STATE_GAME;
+
+    //             // parse the received data
+    //             uint8_t num_balls = master_message[0];
+    //             std::vector<std::pair<int, int>> ball_positions;
+    //             for (int i = 0; i < num_balls; i++) {
+    //                 int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
+    //                 int y = (master_message[3 + i * 3] & 0xFF);
+    //                 ball_positions.push_back(std::make_pair(x, y));
+    //             }
+    //             int paddle1_pos = master_message[25];
+    //             int paddle2_pos = master_message[26];
+    //             int score1 = (master_message[27] & 0xFF) | ((master_message[28] & 0xFF) << 8);
+    //             int score2 = (master_message[29] & 0xFF) | ((master_message[30] & 0xFF) << 8);
+                
+    //             // update the board object with the received data
+    //             balls.clear();
+    //             for (int i = 0; i < num_balls; i++) {
+    //                 balls.emplace_back(ball_positions[i].first, ball_positions[i].second);
+    //             }
+    //             paddles[0].moveTo(paddle1_pos);
+    //             paddles[1].moveTo(paddle2_pos);
+    //             this->score1 = score1;
+    //             this->score2 = score2;
+
+    //             // update the balls on the screen
+    //             for (int i = 0; i < balls.size(); i++) {
+    //                 bool delete_ball = false;
+    //                 balls[i].move(*this, delete_ball);
+            
+    //                 if (delete_ball) {
+    //                     LCD.SetTextColor(LCD_COLOR_BLACK);
+    //                     LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
+    //                     // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
+    //                     balls.erase(balls.begin() + i);
+    //                     i--;
+    //                 }
+    //             }
+
+    //         } else if (master_message[31] == 1) {
+    //             curr_state = STATE_PAUSE;
+    //         } else if (master_message[31] == 0) {
+    //             curr_state = STATE_MENU;
+    //         }
+    //     }
+
+    //     return bits_read;
+    // }
+    // return 0;
+
+    if (rf_comms) {
         char master_message[MASTER_TRANSFER_SIZE] = {0};
-        int bits_read = master.read(NRF24L01P_PIPE_P0, master_message, MASTER_TRANSFER_SIZE);
+        int bits_read = MASTER_TRANSFER_SIZE;
 
         if (verbose) {
             printf("[Master] %d || ", bits_read);
@@ -196,55 +263,53 @@ int Board::processIncomingMasterMessage(bool verbose) {
             printf("\n");
         }
 
-        if (bits_read > 0) {
-            if (master_message[31] == 2) {
-                curr_state = STATE_GAME;
+        // if (bits_read > 0) {
+        //     if (master_message[31] == 2) {
+        //         curr_state = STATE_GAME;
 
-                // parse the received data
-                uint8_t num_balls = master_message[0];
-                std::vector<std::pair<int, int>> ball_positions;
-                for (int i = 0; i < num_balls; i++) {
-                    int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
-                    int y = (master_message[3 + i * 3] & 0xFF);
-                    ball_positions.push_back(std::make_pair(x, y));
-                }
-                int paddle1_pos = master_message[25];
-                int paddle2_pos = master_message[26];
-                int score1 = (master_message[27] & 0xFF) | ((master_message[28] & 0xFF) << 8);
-                int score2 = (master_message[29] & 0xFF) | ((master_message[30] & 0xFF) << 8);
+        //         // parse the received data
+        //         uint8_t num_balls = master_message[0];
+        //         std::vector<std::pair<int, int>> ball_positions;
+        //         for (int i = 0; i < num_balls; i++) {
+        //             int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
+        //             int y = (master_message[3 + i * 3] & 0xFF);
+        //             ball_positions.push_back(std::make_pair(x, y));
+        //         }
+        //         int paddle1_pos = master_message[25];
+        //         int paddle2_pos = master_message[26];
+        //         int score1 = (master_message[27] & 0xFF) | ((master_message[28] & 0xFF) << 8);
+        //         int score2 = (master_message[29] & 0xFF) | ((master_message[30] & 0xFF) << 8);
                 
-                // update the board object with the received data
-                balls.clear();
-                for (int i = 0; i < num_balls; i++) {
-                    balls.emplace_back(ball_positions[i].first, ball_positions[i].second);
-                }
-                paddles[0].moveTo(paddle1_pos);
-                paddles[1].moveTo(paddle2_pos);
-                this->score1 = score1;
-                this->score2 = score2;
+        //         // update the board object with the received data
+        //         balls.clear();
+        //         for (int i = 0; i < num_balls; i++) {
+        //             balls.emplace_back(ball_positions[i].first, ball_positions[i].second);
+        //         }
+        //         paddles[0].moveTo(paddle1_pos);
+        //         paddles[1].moveTo(paddle2_pos);
+        //         this->score1 = score1;
+        //         this->score2 = score2;
 
-                // update the balls on the screen
-                for (int i = 0; i < balls.size(); i++) {
-                    bool delete_ball = false;
-                    balls[i].move(*this, delete_ball);
+        //         // update the balls on the screen
+        //         for (int i = 0; i < balls.size(); i++) {
+        //             bool delete_ball = false;
+        //             balls[i].move(*this, delete_ball);
             
-                    if (delete_ball) {
-                        LCD.SetTextColor(LCD_COLOR_BLACK);
-                        LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
-                        // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
-                        balls.erase(balls.begin() + i);
-                        i--;
-                    }
-                }
+        //             if (delete_ball) {
+        //                 LCD.SetTextColor(LCD_COLOR_BLACK);
+        //                 LCD.FillCircle(balls[i].getLastDrawnX(), balls[i].getLastDrawnY(), 3);
+        //                 // LCD.FillCircle(balls[i].getx(), balls[i].gety(), 3);
+        //                 balls.erase(balls.begin() + i);
+        //                 i--;
+        //             }
+        //         }
 
-            } else if (master_message[31] == 1) {
-                curr_state = STATE_PAUSE;
-            } else if (master_message[31] == 0) {
-                curr_state = STATE_MENU;
-            }
-        }
-
-        return bits_read;
+        //     } else if (master_message[31] == 1) {
+        //         curr_state = STATE_PAUSE;
+        //     } else if (master_message[31] == 0) {
+        //         curr_state = STATE_MENU;
+        //     }
+        // }
     }
     return 0;
 }
@@ -404,6 +469,10 @@ void Paddle::moveTo(int new_x) {
 Board board(0, 20, 240, 320);
 
 // ISRs -----------------------------------
+
+void CommenceRF() {
+    rf_comms = true;
+}
 
 void OnboardButtonISR() {
     
@@ -661,6 +730,7 @@ void stateGame() {
 // MAIN FUNCTION -----------------------------
 
 int main() {
+    commencement_timeout.attach(&CommenceRF, 5s);
     onboard_button.fall(&OnboardButtonISR);
     external_button1.attach(&ExternalButton1ISR, IRQ_FALL, 50, false);
     external_button2.attach(&ExternalButton2ISR, IRQ_FALL, 50, false);

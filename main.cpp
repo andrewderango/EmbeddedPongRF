@@ -164,7 +164,7 @@ int Board::transmitBoardState(bool verbose) {
 int Board::processIncomingSlaveMessage(bool verbose) {
     if (master.readable()) {
         master.setTransferSize(SLAVE_TRANSFER_SIZE);
-        char slave_message[1] = {0};
+        char slave_message[SLAVE_TRANSFER_SIZE] = {0};
         int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
         if (bits_read > 0) {
             int slave_paddle_pos = slave_message[0] & 0xFF;

@@ -165,7 +165,7 @@ int Board::processIncomingSlaveMessage(bool verbose) {
     // RF engine replacement
     // if (master.readable()) {
     //     master.setTransferSize(SLAVE_TRANSFER_SIZE);
-    //     char slave_message[1] = {0};
+    //     char slave_message[SLAVE_TRANSFER_SIZE] = {0};
     //     int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
     //     if (bits_read > 0) {
     //         int slave_paddle_pos = slave_message[0] & 0xFF;
@@ -185,7 +185,7 @@ int Board::processIncomingSlaveMessage(bool verbose) {
 
     // pick a random number between 0 and 204 for paddle position for RF engine
     int random_paddle_pos = randBetween(0, 204);
-    char slave_message[1] = {0};
+    char slave_message[SLAVE_TRANSFER_SIZE] = {0};
     slave_message[0] = random_paddle_pos & 0xFF;
     int bits_read = 1;
 
