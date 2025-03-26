@@ -17,7 +17,7 @@ private:
     int min_width;
     int max_width;
     std::vector<Ball> balls;
-    int maxNumOfBalls = 6;
+    int maxNumOfBalls = 8;
     int score1;
     int score2;
     bool ai1_enabled;
@@ -44,6 +44,10 @@ public:
     void setWireless(bool enabled);
     bool getWireless();
     std::vector<Paddle> paddles;
+    int transmitBoardState(bool verbose);
+    int processIncomingSlaveMessage(bool verbose);
+    int processIncomingMasterMessage(bool verbose);
+    int transmitOutboundSlaveMessage(bool verbose);
 };
 
 // Ball Class
@@ -87,6 +91,7 @@ public:
     void draw();
     void moveRight();
     void moveLeft();
+    void moveTo(int new_x);
 };
 
 // Interrupt Service Routines
@@ -105,12 +110,14 @@ void stateMenu();
 void statePause();
 void stateGame();
 void initializeSM();
+void initializeRF();
 
 // Helper Functions
-void rng_init();
-uint32_t rng_get_random_number();
-float randBetween(float min, float max);
 float min(float a, float b);
 float max(float a, float b);
+float randBetween(float min, float max);
+void rngInit();
+uint32_t rngGetRandomNumber();
+void logRfDiagnostics();
 
 #endif // FUNCTION_H
