@@ -40,7 +40,9 @@ public:
     void resetGame();
     void setAI1Enabled(bool enabled);
     void setAI2Enabled(bool enabled);
+    bool getAI2Enabled();
     void setWireless(bool enabled);
+    bool getWireless();
     std::vector<Paddle> paddles;
     bool getWireless();
     int transmitBoardState(bool verbose);
@@ -97,6 +99,9 @@ public:
 void ExternalButton1ISR();
 void ExternalButton2ISR();
 void ExternalButton3ISR();
+void ExternalButton4ISR();
+void ExternalButton5ISR();
+void ExternalButton6ISR();
 void OnboardButtonISR();
 
 // State Machine Setup
