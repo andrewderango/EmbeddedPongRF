@@ -84,9 +84,17 @@ void Board::drawBalls() {
     }
 }
 void Board::moveBalls() {
+    int topBall = 0;
+    int bottomBall = 0;
     for (int i = 0; i < balls.size(); i++) {
         bool delete_ball = false;
         balls[i].move(*this, delete_ball);
+
+        if((balls[i].gety() < balls[bottomBall].gety() || balls[bottomBall].gety_speed() > 0) && !delete_ball && ai1_enabled && balls[i].gety_speed() < 0) {
+            bottomBall = i;
+        } else if ((balls[i].gety() > balls[topBall].gety() || balls[topBall].gety_speed() < 0) && !delete_ball && ai2_enabled && balls[i].gety_speed() > 0) {
+            topBall = i;
+        }
 
         // somehow changing the LCD in an ISR???
         if (delete_ball) {
@@ -103,14 +111,14 @@ void Board::moveBalls() {
     
     // AI opponent
     float rand_num = randBetween(0,11);
-    if (balls[0].getx() < paddles[0].getLeft() && ai1_enabled && rand_num < AI1_DIFFICULTY) {
+    if (balls[bottomBall].getx() < paddles[0].getLeft() && ai1_enabled && rand_num < AI1_DIFFICULTY && balls[bottomBall].gety_speed() < 0) {
         paddles[0].moveLeft();
-    } else if (balls[0].getx() > paddles[0].getRight() && ai1_enabled && rand_num < AI1_DIFFICULTY) {
+    } else if (balls[bottomBall].getx() > paddles[0].getRight() && ai1_enabled && rand_num < AI1_DIFFICULTY && balls[bottomBall].gety_speed() < 0) {
         paddles[0].moveRight();
     }
-    if (balls[0].getx() < paddles[1].getLeft() && ai2_enabled && rand_num > 11-AI2_DIFFICULTY) {
+    if (balls[topBall].getx() < paddles[1].getLeft() && ai2_enabled && rand_num > 11-AI2_DIFFICULTY && balls[topBall].gety_speed() > 0) {
         paddles[1].moveLeft();
-    } else if (balls[0].getx() > paddles[1].getRight() && ai2_enabled && rand_num > 11-AI2_DIFFICULTY) {
+    } else if (balls[topBall].getx() > paddles[1].getRight() && ai2_enabled && rand_num > 11-AI2_DIFFICULTY && balls[topBall].gety_speed() > 0) {
         paddles[1].moveRight();
     }
 }
@@ -327,6 +335,7 @@ void Ball::draw() {
 }
 float Ball::getx() { return x; }
 float Ball::gety() { return y; }
+float Ball::gety_speed() { return y_speed; }
 int Ball::getLastDrawnX() { return lastDrawnX; }
 int Ball::getLastDrawnY() { return lastDrawnY; }
 void Ball::move(Board& board, bool& delete_ball) {

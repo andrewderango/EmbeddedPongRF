@@ -66,6 +66,7 @@ public:
     ~Ball();
     float getx();
     float gety();
+    float gety_speed();
     int getLastDrawnX();
     int getLastDrawnY();
     void draw();
