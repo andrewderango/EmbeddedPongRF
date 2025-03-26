@@ -30,7 +30,6 @@ nRF24L01P master(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, 
 nRF24L01P slave(PE_14, PE_13, PE_12, PE_11, PE_9, NC); // MOSI, MISO, SCK, CS, CE, IRQ
 DigitalOut red_led(PG_13);
 DigitalOut green_led(PG_14);
-Ticker game_ticker;
 
 // INTERRUPTS -----------------------------
 
@@ -41,6 +40,7 @@ DebouncedInterrupt external_button3(PA_7);
 DebouncedInterrupt external_button4(PG_3);
 DebouncedInterrupt external_button5(PH_1);
 DebouncedInterrupt external_button6(PG_2);
+Ticker game_ticker;
 
 // DATA TYPES -----------------------------
 

@@ -13,7 +13,7 @@
 #define RNG_SR         (*(volatile uint32_t *)(RNG_BASE + 0x04))    // RNG Status register
 #define RNG_DR         (*(volatile uint32_t *)(RNG_BASE + 0x08))    // RNG Data register
 
-#define MASTER 1 // 1 for master, 0 for slave
+#define MASTER 0 // 1 for master, 0 for slave
 #define MASTER_TRANSFER_SIZE 32 // 30 byte RF payload
 #define SLAVE_TRANSFER_SIZE 1 // 1 byte RF payload
 #define TICKERTIME 20ms
@@ -116,9 +116,6 @@ void Board::spawnBall() {
     if (balls.size() < maxNumOfBalls) {
         balls.emplace_back(min_width+(max_width-min_width)/2, min_height+(max_height-min_height)/2);
     }
-}
-bool Board::getWireless() {
-    return wireless;
 }
 int Board::transmitBoardState(bool verbose) {
     // pull data from board object
@@ -419,8 +416,8 @@ void OnboardButtonISR() {
             curr_state = STATE_MENU;
         } else if (curr_state == STATE_MENU) {
             board.setAI1Enabled(true);
-            board.setAI2Enabled(true);
-            board.setWireless(true); // this is just for testing! turn to false in prod!!!
+            board.setAI2Enabled(false); // this is just for testing! turn to true in prod!!!
+            board.setWireless(true); // this is just for testing! turn to false in prod !!!
             curr_state = STATE_GAME;
         }
     }
@@ -624,7 +621,7 @@ void stateGame() {
     if (prev_state != curr_state) {
         LCD.Clear(LCD_COLOR_BLACK);
         if (MASTER) { game_ticker.attach(&TickerISR, TICKERTIME); }
-        if (board.getWireless()) { initializeRF(); }
+        // if (board.getWireless()) { initializeRF(); } // this is commented out for testing purposes !!!
         prev_state = curr_state;
     }
 
