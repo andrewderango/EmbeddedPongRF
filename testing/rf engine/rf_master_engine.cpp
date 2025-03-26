@@ -20,8 +20,8 @@
 #define AI1_DIFFICULTY 1 // 0 is easy, 10 is hard (top paddle)
 #define AI2_DIFFICULTY 3 // 0 is easy, 10 is hard (bottom paddle)
 
-// master: DISCO-F429ZI - 066CFF545150898367163727 (AV1)
-// slave: DISCO-F429ZI - 066DFF4951775177514867255038 (AV2)
+// master: DISCO-F429ZI: 066CFF545150898367163727 (AV1)
+// slave: DISCO-F429ZI: 066DFF4951775177514867255038 (AV2)
 
 // DEVICES --------------------------------
 
@@ -33,8 +33,6 @@ DigitalOut green_led(PG_14);
 
 // INTERRUPTS -----------------------------
 
-Ticker game_ticker;
-Ticker goal_ticker;
 InterruptIn onboard_button(BUTTON1);
 DebouncedInterrupt external_button1(PA_5);
 DebouncedInterrupt external_button2(PA_6);
@@ -42,6 +40,7 @@ DebouncedInterrupt external_button3(PA_7);
 DebouncedInterrupt external_button4(PG_3);
 DebouncedInterrupt external_button5(PH_1);
 DebouncedInterrupt external_button6(PG_2);
+Ticker game_ticker;
 
 // DATA TYPES -----------------------------
 
@@ -56,7 +55,6 @@ typedef enum {
 static StateType curr_state;
 static StateType prev_state = STATE_GAME;
 bool spawn_ball_flag = false;
-int goal_ticker_counter = 0;
 
 // OBJECTS --------------------------------
 // BOARD OBJECT METHODS
@@ -164,25 +162,45 @@ int Board::transmitBoardState(bool verbose) {
     return bits_written;
 }
 int Board::processIncomingSlaveMessage(bool verbose) {
-    if (master.readable()) {
-        master.setTransferSize(SLAVE_TRANSFER_SIZE);
-        char slave_message[SLAVE_TRANSFER_SIZE] = {0};
-        int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
-        if (bits_read > 0) {
-            int slave_paddle_pos = slave_message[0] & 0xFF;
-            paddles[1].moveTo(slave_paddle_pos);
-        }
-        if (verbose) {
-            printf("[Slave] %d || ", bits_read);
-            for (int i = 0; i < 1; ++i) {
-                printf("%02X ", slave_message[i]);
-            }
-            printf("\n");
-        }
-        return bits_read;
-    }
+    // RF engine replacement
+    // if (master.readable()) {
+    //     master.setTransferSize(SLAVE_TRANSFER_SIZE);
+    //     char slave_message[SLAVE_TRANSFER_SIZE] = {0};
+    //     int bits_read = master.read(NRF24L01P_PIPE_P0, slave_message, 1);
+    //     if (bits_read > 0) {
+    //         int slave_paddle_pos = slave_message[0] & 0xFF;
+    //         paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+    //     }
+    //     if (verbose) {
+    //         printf("[Slave] %d || ", bits_read);
+    //         for (int i = 0; i < 1; ++i) {
+    //             printf("%02X ", slave_message[i]);
+    //         }
+    //         printf("\n");
+    //     }
+    //     return bits_read;
+    // }
+    //
+    // return 0;
 
-    return 0;
+    // pick a random number between 0 and 204 for paddle position for RF engine
+    int random_paddle_pos = randBetween(0, 204);
+    char slave_message[SLAVE_TRANSFER_SIZE] = {0};
+    slave_message[0] = random_paddle_pos & 0xFF;
+    int bits_read = 1;
+
+    if (bits_read > 0) {
+        int slave_paddle_pos = slave_message[0] & 0xFF;
+        paddles[1].moveTo(slave_paddle_pos); // Update the slave paddle position
+    }
+    if (verbose) {
+        printf("[Slave] %d || ", bits_read);
+        for (int i = 0; i < 1; ++i) {
+            printf("%02X ", slave_message[i]);
+        }
+        printf("\n");
+    }
+    return bits_read;
 }
 int Board::processIncomingMasterMessage(bool verbose) {
     if (slave.readable()) {
@@ -206,8 +224,8 @@ int Board::processIncomingMasterMessage(bool verbose) {
                 uint8_t num_balls = master_message[0];
                 std::vector<std::pair<int, int>> ball_positions;
                 for (int i = 0; i < num_balls; i++) {
-                    int x = (master_message[1 + i * 3] & 0xFF);
-                    int y = (master_message[2 + i * 3] & 0xFF) | ((master_message[3 + i * 3] & 0xFF) << 8);
+                    int x = (master_message[1 + i * 3] & 0xFF) | ((master_message[2 + i * 3] & 0xFF) << 8);
+                    int y = (master_message[3 + i * 3] & 0xFF);
                     ball_positions.push_back(std::make_pair(x, y));
                 }
                 int paddle1_pos = master_message[25];
@@ -288,10 +306,6 @@ void Board::setAI2Enabled(bool enabled) {
     ai2_enabled = enabled;
 }
 
-bool Board::getAI1Enabled() {
-    return ai1_enabled;
-}
-
 bool Board::getAI2Enabled() {
     return ai2_enabled;
 }
@@ -335,13 +349,9 @@ void Ball::move(Board& board, bool& delete_ball) {
     delete_ball = false;
     if (y-radius <= board.getMinHeight()) {
         board.incrementScore2();
-        goal_ticker_counter = 0;
-        goal_ticker.attach(&GoalTickerCallback, 50ms);
         delete_ball = true;
     } else if (y+radius >= board.getMaxHeight()) {
         board.incrementScore1();
-        goal_ticker_counter = 0;
-        goal_ticker.attach(&GoalTickerCallback, 50ms);
         delete_ball = true;
     } else if (x-radius <= board.getMinWidth()) {
         x_speed = abs(x_speed);
@@ -426,8 +436,8 @@ void OnboardButtonISR() {
             curr_state = STATE_MENU;
         } else if (curr_state == STATE_MENU) {
             board.setAI1Enabled(true);
-            board.setAI2Enabled(true);
-            board.setWireless(false);
+            board.setAI2Enabled(false); // this is just for testing! turn to true in prod!!!
+            board.setWireless(true); // this is just for testing! turn to false in prod !!!
             curr_state = STATE_GAME;
         }
     }
@@ -444,7 +454,7 @@ void OnboardButtonISR() {
 }
 
 void ExternalButton1ISR() {
-    if (curr_state == STATE_GAME && !board.getAI1Enabled()) {
+    if (curr_state == STATE_GAME) {
         if (MASTER) { board.paddles[0].moveLeft(); }
         else { board.paddles[1].moveLeft(); }
     } else if (curr_state == STATE_MENU) {
@@ -473,7 +483,7 @@ void ExternalButton2ISR() {
 }
 
 void ExternalButton3ISR() {
-    if (curr_state == STATE_GAME && !board.getAI1Enabled()) {
+    if (curr_state == STATE_GAME) {
         if (MASTER) { board.paddles[0].moveRight(); }
         else { board.paddles[1].moveRight(); }
     } else if (curr_state == STATE_MENU) {
@@ -510,23 +520,6 @@ void ExternalButton6ISR() {
 
 void TickerISR() {
     board.moveBalls();
-}
-
-void GoalTickerCallback() {
-    if (goal_ticker_counter == 0) {
-        red_led = 0;
-        green_led = 1;
-    }
-
-    red_led = !red_led;
-    green_led = !green_led;
-    goal_ticker_counter++;
-
-    if (goal_ticker_counter >= 30) {
-        red_led = 0;
-        green_led = 0;
-        goal_ticker.detach();
-    }
 }
 
 // FSM SET UP ------------------------------
@@ -648,7 +641,7 @@ void stateGame() {
     if (prev_state != curr_state) {
         LCD.Clear(LCD_COLOR_BLACK);
         if (MASTER) { game_ticker.attach(&TickerISR, TICKERTIME); }
-        if (board.getWireless()) { initializeRF(); }
+        // if (board.getWireless()) { initializeRF(); } // this is commented out for testing purposes !!!
         prev_state = curr_state;
     }
 
