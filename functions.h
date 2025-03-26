@@ -40,6 +40,7 @@ public:
     void resetGame();
     void setAI1Enabled(bool enabled);
     void setAI2Enabled(bool enabled);
+    bool getAI1Enabled();
     bool getAI2Enabled();
     void setWireless(bool enabled);
     bool getWireless();
